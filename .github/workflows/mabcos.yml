@@ -6,7 +6,12 @@ on:
   schedule:
     - cron: "0 3 * * *"     # 08:00 PKT
     - cron: "30 14 * * *"   # 19:30 PKT
-  workflow_dispatch: {}      # lets you run it manually from the Actions tab
+  workflow_dispatch:         # lets you run it manually from the Actions tab
+    inputs:
+      dry_run:
+        description: "Generate only (NO posting); upload images/reels as an artifact"
+        type: boolean
+        default: true
 
 concurrency:
   group: mabcos-post
@@ -54,6 +59,18 @@ jobs:
         run: python pipeline.py
 
       - name: Auto-post to Facebook
+        if: github.event.inputs.dry_run != 'true'
         env:
           CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
         run: python autopost.py
+
+      - name: Upload batch preview (dry run only)
+        if: github.event.inputs.dry_run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mabcos-batch-preview
+          path: |
+            output/**/cards/*.png
+            output/**/reels/*.mp4
+          if-no-files-found: warn
+          retention-days: 7
