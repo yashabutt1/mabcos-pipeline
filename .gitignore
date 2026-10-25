@@ -1,0 +1,23 @@
+.env
+.venv/
+output/
+posted/
+rejected/
+__pycache__/
+*.pyc
+*.log
+*.out
+*.err
+approval_log.txt
+last_update_offset.txt
+.DS_Store
+*.dmg
+*.zip
+
+# heavy / local-only assets. The cloud (GitHub Actions) installs ffmpeg itself,
+# uses Google Fonts over the network, and runs reels without background music.
+bin/
+music/
+fonts/
+
+# products.txt and assets/ (the logo) ARE committed — the cloud needs them.

@@ -1,0 +1,15 @@
+# MABCOS Amazon product pool — one "Name | URL" per line.
+#
+# HOW IT WORKS
+#   - Your Associate tag (AMAZON_ASSOC_TAG in .env) is forced onto every link,
+#     even if the pasted link already had a tag.
+#   - Lines starting with # are ignored. Lines containing "EXAMPLE" are skipped,
+#     so this sample file never posts.
+#   - Prefer a specific product page link (…/dp/ASIN…) — it previews best and
+#     converts best. A plain search link (…/s?k=…) also works and never 404s,
+#     which is handy for seeding the pool before you've picked exact items.
+#
+# To go live: copy this file to products.txt and replace these with real links.
+
+Lehninger Principles of Biochemistry | https://www.amazon.com/s?k=EXAMPLE
+Molecular Biology of the Cell (Alberts) | https://www.amazon.com/dp/EXAMPLE123

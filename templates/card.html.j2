@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0A1230; --gold:#FFC62B; --gold2:#FFD66B; --blue:#6ea8ff;
+    --ink:#EAF0FF; --muted:#9FB0D8; --panel:rgba(255,255,255,.05);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1350px;overflow:hidden}
+  body{font-family:'Inter',sans-serif;color:var(--ink);
+    background:radial-gradient(1200px 700px at 80% -8%, #1c2f7a 0%, rgba(28,47,122,0) 55%),
+               linear-gradient(160deg,#0b1436 0%,#0a1230 45%,#080e26 100%);position:relative;}
+  .tex{position:absolute;inset:0;opacity:.07;background-image:
+     radial-gradient(circle at 22% 32%, var(--gold) 1.5px, transparent 1.6px),
+     radial-gradient(circle at 72% 62%, var(--blue) 1.5px, transparent 1.6px);
+     background-size:48px 48px,66px 66px;}
+  .frame{position:absolute;inset:0;padding:74px 72px;display:flex;flex-direction:column}
+  .top{display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:16px}
+  .logobadge{width:66px;height:66px;border-radius:15px;background:#fff;display:flex;align-items:center;justify-content:center;padding:8px;box-shadow:0 8px 22px rgba(0,0,0,.28)}
+  .logobadge img{width:100%;height:100%;object-fit:contain}
+  .wordmark{font-family:'Space Grotesk';font-weight:700;font-size:34px;letter-spacing:1px;color:#fff}
+  .wordmark span{color:var(--gold)}
+  .pill{font-family:'Space Grotesk';font-weight:700;font-size:20px;letter-spacing:2px;color:#0a1230;
+     background:linear-gradient(180deg,var(--gold2),var(--gold));padding:12px 24px;border-radius:999px;text-transform:uppercase;white-space:nowrap}
+  .rule{height:3px;margin-top:30px;border-radius:3px;background:linear-gradient(90deg,var(--gold),rgba(255,198,43,0));width:170px}
+  .kicker{margin-top:46px;font-family:'Space Grotesk';font-weight:600;font-size:23px;color:var(--gold);letter-spacing:2px;text-transform:uppercase}
+  h1{font-family:'Space Grotesk';font-weight:700;line-height:1.04;margin-top:14px;color:#fff;letter-spacing:-1px;
+     font-size:{{ title_size or 70 }}px}
+  .lede{margin-top:26px;font-size:32px;line-height:1.5;color:var(--muted);font-weight:400;max-width:930px}
+  .lede b{color:var(--ink);font-weight:600}
+  .lede .hl{color:var(--gold);font-weight:600}
+  /* stats */
+  .stats{display:flex;gap:24px;margin-top:44px}
+  .stat{flex:1;background:linear-gradient(180deg,rgba(255,198,43,.14),rgba(255,198,43,.05));
+     border:1.5px solid rgba(255,198,43,.42);border-radius:22px;padding:28px 26px}
+  .stat .n{font-family:'Space Grotesk';font-weight:700;font-size:66px;color:var(--gold);line-height:1}
+  .stat .l{margin-top:10px;font-size:24px;color:var(--ink);font-weight:500;line-height:1.25}
+  /* dataviz bars */
+  .chart{margin-top:40px;display:flex;flex-direction:column;gap:22px}
+  .barrow{display:flex;align-items:center;gap:20px}
+  .barname{width:250px;text-align:right;font-size:27px;font-weight:600;color:var(--ink)}
+  .barname i{display:block;font-style:normal;font-size:19px;color:var(--muted);font-weight:400}
+  .track{flex:1;height:42px;background:rgba(255,255,255,.06);border-radius:9px;overflow:hidden}
+  .bar{height:100%;border-radius:9px;background:linear-gradient(90deg,#ff9e2c,var(--gold2));box-shadow:0 0 22px rgba(255,198,43,.32)}
+  .barval{width:120px;font-family:'Space Grotesk';font-weight:700;font-size:38px;color:var(--gold)}
+  /* labeled blocks (paper/opportunity, business idea) */
+  .blocks{margin-top:40px;display:flex;flex-direction:column;gap:22px}
+  .block{background:var(--panel);border:1.5px solid rgba(255,255,255,.09);border-radius:20px;padding:28px 30px}
+  .block .bh{font-family:'Space Grotesk';font-weight:700;font-size:25px;letter-spacing:.5px;margin-bottom:10px;color:var(--gold)}
+  .block.blue .bh{color:var(--blue)}
+  .block .bb{font-size:28px;line-height:1.45;color:var(--ink)}
+  .block .bb b{color:#fff}
+  /* event meta */
+  .meta{margin-top:40px;display:flex;flex-direction:column;gap:18px}
+  .mrow{display:flex;align-items:center;gap:20px;font-size:30px}
+  .mrow .mi{width:58px;height:58px;border-radius:14px;background:var(--panel);border:1.5px solid rgba(255,255,255,.1);
+     display:flex;align-items:center;justify-content:center;font-size:30px;flex:none}
+  .mrow .ml{color:var(--muted);width:200px;font-weight:500}
+  .mrow .mv{color:#fff;font-weight:600}
+  .mrow .mv b{color:var(--gold)}
+  /* callout */
+  /* poll / interactive options */
+  .poll{margin-top:40px;display:flex;flex-direction:column;gap:18px}
+  .opt{display:flex;align-items:center;gap:22px;background:var(--panel);border:1.5px solid rgba(255,255,255,.1);border-radius:16px;padding:22px 26px}
+  .opt .ob{width:54px;height:54px;border-radius:12px;background:linear-gradient(180deg,var(--gold2),var(--gold));color:#0a1230;font-family:'Space Grotesk';font-weight:700;display:flex;align-items:center;justify-content:center;font-size:27px;flex:none}
+  .opt .ot{color:#fff;font-weight:500;font-size:30px;line-height:1.3}
+  .callout{margin-top:34px;background:rgba(110,168,255,.08);border-left:5px solid var(--blue);
+     border-radius:0 16px 16px 0;padding:24px 30px;font-size:27px;line-height:1.45;color:var(--ink)}
+  .callout.gold{background:rgba(255,198,43,.09);border-left-color:var(--gold)}
+  .callout b{color:#8fc0ff}
+  .callout.gold b{color:var(--gold)}
+  .linkchip{margin-top:30px;display:inline-flex;align-items:center;gap:12px;align-self:flex-start;
+     background:var(--panel);border:1.5px solid rgba(255,198,43,.35);border-radius:999px;padding:16px 26px;
+     font-size:25px;color:var(--gold);font-weight:600;font-family:'Space Grotesk'}
+  .spacer{flex:1}
+  .foot{display:flex;align-items:flex-end;justify-content:space-between;border-top:1.5px solid rgba(255,255,255,.1);padding-top:26px;margin-top:30px}
+  .handle{font-family:'Space Grotesk';font-weight:600;font-size:27px;color:#fff}
+  .handle span{display:block;color:var(--muted);font-weight:400;font-size:22px;margin-top:4px}
+  .cta{font-size:24px;color:var(--gold);font-weight:600;white-space:nowrap}
+</style></head>
+<body>
+  <div class="tex"></div>
+  <div class="frame">
+    <div class="top">
+      <div class="brand">
+        {% if logo_uri %}<div class="logobadge"><img src="{{ logo_uri }}" alt=""></div>{% endif %}
+        <div class="wordmark">MAB<span>COS</span></div>
+      </div>
+      <div class="pill">{{ series }}</div>
+    </div>
+    <div class="rule"></div>
+
+    {% if kicker %}<div class="kicker">{{ kicker }}</div>{% endif %}
+    <h1>{{ title }}</h1>
+    {% if lede %}<p class="lede">{{ lede|safe }}</p>{% endif %}
+
+    {% if stats %}<div class="stats">
+      {% for s in stats %}<div class="stat"><div class="n">{{ s.n }}</div><div class="l">{{ s.l }}</div></div>{% endfor %}
+    </div>{% endif %}
+
+    {% if bars %}<div class="chart">
+      {% for b in bars %}<div class="barrow">
+        <div class="barname">{{ b.name }}{% if b.sub %}<i>{{ b.sub }}</i>{% endif %}</div>
+        <div class="track"><div class="bar" style="width:{{ b.val }}%"></div></div>
+        <div class="barval">{{ b.val }}%</div>
+      </div>{% endfor %}
+    </div>{% endif %}
+
+    {% if blocks %}<div class="blocks">
+      {% for bl in blocks %}<div class="block {{ bl.tone or '' }}"><div class="bh">{{ bl.head }}</div><div class="bb">{{ bl.body|safe }}</div></div>{% endfor %}
+    </div>{% endif %}
+
+    {% if meta %}<div class="meta">
+      {% for m in meta %}<div class="mrow"><div class="mi">{{ m.icon }}</div><div class="ml">{{ m.label }}</div><div class="mv">{{ m.value|safe }}</div></div>{% endfor %}
+    </div>{% endif %}
+
+    {% if options %}<div class="poll">
+      {% for o in options %}<div class="opt"><div class="ob">{{ o.key }}</div><div class="ot">{{ o.text }}</div></div>{% endfor %}
+    </div>{% endif %}
+
+    {% if callout %}<div class="callout {{ callout_tone or '' }}">{{ callout|safe }}</div>{% endif %}
+    {% if linkchip %}<div class="linkchip">🔗 {{ linkchip }}</div>{% endif %}
+
+    <div class="spacer"></div>
+    <div class="foot">
+      <div class="handle">@innovationthroughbiotech<span>{{ footer_sub or 'Biotech · Biochem · Bioinformatics' }}</span></div>
+      <div class="cta">{{ cta or 'Follow + Save →' }}</div>
+    </div>
+  </div>
+</body></html>

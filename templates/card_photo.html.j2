@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#0A1230;--gold:#FFC62B;--gold2:#FFD66B;--ink:#EAF0FF;--muted:#AFBEE0;}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1350px;overflow:hidden}
+  body{font-family:'Inter',sans-serif;color:var(--ink);background:#080e26;position:relative}
+  .photo{position:absolute;left:0;top:0;width:1080px;object-fit:cover}
+  .brand{position:absolute;top:50px;left:72px;z-index:3;display:flex;align-items:center;gap:14px}
+  .logobadge{width:60px;height:60px;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;padding:7px;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+  .logobadge img{width:100%;height:100%;object-fit:contain}
+  .wordmark{font-family:'Space Grotesk';font-weight:700;font-size:32px;letter-spacing:1px;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+  .wordmark span{color:var(--gold)}
+  .pill{position:absolute;top:54px;right:72px;z-index:3;font-family:'Space Grotesk';font-weight:700;font-size:20px;letter-spacing:2px;color:#0a1230;
+     background:linear-gradient(180deg,var(--gold2),var(--gold));padding:12px 24px;border-radius:999px;text-transform:uppercase;box-shadow:0 6px 20px rgba(0,0,0,.35)}
+  .content{position:absolute;left:0;right:0;z-index:3;padding:0 72px}
+  .kicker{font-family:'Space Grotesk';font-weight:600;font-size:23px;color:var(--gold);letter-spacing:2px;text-transform:uppercase}
+  h1{font-family:'Space Grotesk';font-weight:700;line-height:1.05;margin-top:14px;color:#fff;letter-spacing:-1px;
+     font-size:{{ title_size or 70 }}px;text-shadow:0 2px 20px rgba(0,0,0,.45)}
+  .lede{margin-top:22px;font-size:31px;line-height:1.5;color:#E7EEFF;font-weight:400;max-width:940px;text-shadow:0 1px 10px rgba(0,0,0,.5)}
+  .lede b{color:#fff;font-weight:600}
+  .bigstat{margin-top:30px;display:flex;align-items:baseline;gap:20px}
+  .bigstat .n{font-family:'Space Grotesk';font-weight:700;font-size:120px;color:var(--gold);line-height:.9;text-shadow:0 4px 24px rgba(0,0,0,.4)}
+  .bigstat .l{font-size:30px;color:#EAF0FF;max-width:560px;line-height:1.3;font-weight:500}
+  .plink{margin-top:24px;display:inline-flex;align-items:center;gap:10px;background:rgba(10,18,48,.6);border:1.5px solid rgba(255,198,43,.55);border-radius:999px;padding:14px 26px;font-size:24px;color:var(--gold);font-weight:600;font-family:'Space Grotesk'}
+  .foot{position:absolute;left:72px;right:72px;bottom:64px;z-index:3;display:flex;align-items:flex-end;justify-content:space-between}
+  .handle{font-family:'Space Grotesk';font-weight:600;font-size:26px;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.5)}
+  .handle span{display:block;color:#C7D3EE;font-weight:400;font-size:21px;margin-top:4px}
+  .cta{font-size:23px;color:var(--gold);font-weight:600;white-space:nowrap}
+  .credit{position:absolute;bottom:20px;right:24px;z-index:3;font-size:15px;color:rgba(255,255,255,.5)}
+
+  {% if layout == 'hero' %}
+  /* photo on top ~56%, navy panel below */
+  .photo{height:756px}
+  .scrim{position:absolute;left:0;top:0;width:1080px;height:756px;z-index:2;
+     background:linear-gradient(180deg,rgba(8,14,38,.15) 0%,rgba(8,14,38,0) 35%,rgba(8,14,38,.65) 82%,#080e26 100%)}
+  .panel{position:absolute;left:0;top:700px;width:1080px;height:650px;z-index:2;
+     background:linear-gradient(180deg,rgba(8,14,38,0),#0a1230 12%,#0a1230 100%)}
+  .content{top:770px}
+  {% else %}
+  /* full-bleed photo + strong scrim, text bottom-weighted */
+  .photo{height:1350px}
+  .scrim{position:absolute;inset:0;z-index:2;
+     background:linear-gradient(180deg,rgba(8,14,38,.55) 0%,rgba(8,14,38,.25) 32%,rgba(8,14,38,.7) 70%,rgba(8,14,38,.96) 100%)}
+  .content{bottom:210px}
+  {% endif %}
+</style></head>
+<body>
+  <img class="photo" src="{{ image }}" alt="">
+  <div class="scrim"></div>
+  {% if layout == 'hero' %}<div class="panel"></div>{% endif %}
+  <div class="brand">
+    {% if logo_uri %}<div class="logobadge"><img src="{{ logo_uri }}" alt=""></div>{% endif %}
+    <div class="wordmark">MAB<span>COS</span></div>
+  </div>
+  <div class="pill">{{ series }}</div>
+
+  <div class="content">
+    {% if kicker %}<div class="kicker">{{ kicker }}</div>{% endif %}
+    <h1>{{ title }}</h1>
+    {% if lede %}<p class="lede">{{ lede|safe }}</p>{% endif %}
+    {% if stat %}<div class="bigstat"><div class="n">{{ stat.n }}</div><div class="l">{{ stat.l }}</div></div>{% endif %}
+    {% if linkchip %}<div class="plink">🔗 {{ linkchip }}</div>{% endif %}
+  </div>
+
+  <div class="foot">
+    <div class="handle">@innovationthroughbiotech<span>{{ footer_sub or 'Biotech · Biochem · Bioinformatics' }}</span></div>
+    <div class="cta">{{ cta or 'Follow + Save →' }}</div>
+  </div>
+  {% if credit %}<div class="credit">{{ credit }}</div>{% endif %}
+</body></html>

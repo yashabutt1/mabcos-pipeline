@@ -1,0 +1,502 @@
+"""MABCOS content engine — generates STRUCTURED, specific, sourced card specs
+per pillar, ready for cards.make_card().
+
+Two sourcing modes:
+  - GROUNDED (Gemini + Google Search): current, real opportunities, jobs, papers,
+    and tech developments — verified at generation time.
+  - EVERGREEN (Gemini): accurate knowledge/business/fact cards with real numbers,
+    in the MABCOS voice, built on the strict accuracy rules below.
+
+Each generator returns {"template","data","caption","kind"}:
+  template -> "card.html.j2" or "card_photo.html.j2"
+  data     -> dict for the Jinja template
+  caption  -> the Facebook caption (with CTAs + hashtags)
+"""
+from __future__ import annotations
+
+import json
+import os
+import re
+
+from google import genai
+from google.genai import types
+
+import config
+import fallbacks
+
+_client = genai.Client() if os.getenv("GEMINI_API_KEY") else None
+
+ACCURACY = (
+    "ACCURACY IS NON-NEGOTIABLE. Every fact, number, name, date, and link must be "
+    "real and correct. Never invent statistics, studies, people, or URLs. If you are "
+    "not certain, use only what is well established. No medical advice or cure claims."
+)
+VOICE = (
+    f"Write for MABCOS (@innovationthroughbiotech), a biotech/biochem/bioinformatics "
+    f"page. Audience: {config.AUDIENCE} Voice: credible, specific, useful, a little "
+    f"inspiring. No hype, no fluff."
+)
+
+
+def _gen(prompt: str, grounded: bool = False, temp: float = 0.5) -> str:
+    if _client is None:
+        raise RuntimeError("GEMINI_API_KEY not set")
+    cfg = types.GenerateContentConfig(temperature=temp)
+    if grounded:
+        cfg.tools = [types.Tool(google_search=types.GoogleSearch())]
+    resp = _client.models.generate_content(
+        model=config.TEXT_MODEL, contents=prompt, config=cfg)
+    return resp.text or ""
+
+
+def _json(text: str) -> dict:
+    cleaned = re.sub(r"```(?:json)?|```", "", text).strip()
+    s, e = cleaned.find("{"), cleaned.rfind("}")
+    if s == -1 or e == -1:
+        raise ValueError("no JSON object in model output")
+    return json.loads(cleaned[s:e + 1])
+
+
+def _caption(hook: str, body: str, hashtags: list[str], cta: str = None) -> str:
+    cta = cta or config.CTA_FOLLOW
+    tags = " ".join("#" + t.lstrip("#") for t in (hashtags or [])[:9])
+    parts = [p for p in [hook.strip(), body.strip(), cta, config.CTA_SAVE, tags] if p]
+    return "\n\n".join(parts)
+
+
+# ---------------------------------------------------------------------------
+# EVERGREEN pillars (Gemini, accuracy-grounded by rules)
+# ---------------------------------------------------------------------------
+def gen_education() -> dict:
+    prompt = f"""{VOICE}
+{ACCURACY}
+
+Create ONE "Bio-Education" card: a specific, true, surprising fact from
+biotechnology, biochemistry, genetics, or microbiology, built around REAL numbers.
+Pick something concrete (an impact figure, a cost, a percentage, a record) — like
+the kind of fact a curious student screenshots.
+
+Respond ONLY as JSON:
+{{"kicker":"2-3 word topic in Title Case",
+  "title":"punchy headline, max 8 words, no period",
+  "lede":"1-2 sentences of context. Use <b>...</b> around the key term.",
+  "stats":[{{"n":"big number e.g. 9% or $57B","l":"what it measures, <=9 words"}},
+           {{"n":"second number","l":"what it measures, <=9 words"}}],
+  "callout":"one 'why it matters' sentence, <b>...</b> on the key idea",
+  "fb_hook":"1 line caption hook","fb_body":"1-2 sentence caption body + a question",
+  "hashtags":["6-9 relevant tags"]}}
+Both stats must be real and verifiable."""
+    d = _json(_gen(prompt, temp=0.7))
+    data = {"series": "Bio · Education", "kicker": d.get("kicker"),
+            "title": d["title"], "lede": d.get("lede"),
+            "stats": d.get("stats", [])[:2], "callout": d.get("callout")}
+    return {"template": "card.html.j2", "data": data, "kind": "education",
+            "caption": _caption(d.get("fb_hook", d["title"]), d.get("fb_body", ""),
+                                 d.get("hashtags", []))}
+
+
+def gen_business() -> dict:
+    prompt = f"""{VOICE}
+{ACCURACY}
+
+Create ONE "Bio-Business Idea": a concrete, realistic biotech/bioinformatics
+venture a small team in a developing country could actually start. Be specific and
+practical, with a real money angle. (In the style: soil testing lab, biopesticide
+manufacturing, forensic DNA services, bioinformatics consulting.)
+
+Respond ONLY as JSON:
+{{"title":"the venture name, max 6 words",
+  "lede":"1 sentence on the real need it serves",
+  "blocks":[{{"head":"💡 The idea","body":"what you'd offer, 1-2 sentences, <b>key</b>"}},
+            {{"head":"💰 Who pays","body":"the paying customer + why recurring, <b>key</b>"}},
+            {{"head":"🚀 Why now","body":"the trend making it timely","tone":"blue"}}],
+  "fb_hook":"caption hook","fb_body":"caption body + a question","hashtags":["6-9 tags"]}}"""
+    d = _json(_gen(prompt, temp=0.8))
+    data = {"series": "Bio · Business Idea", "kicker": "Venture",
+            "title": d["title"], "title_size": 66, "lede": d.get("lede"),
+            "blocks": d.get("blocks", []), "footer_sub": "Would you build this? 👇"}
+    return {"template": "card.html.j2", "data": data, "kind": "business",
+            "caption": _caption(d.get("fb_hook", d["title"]), d.get("fb_body", ""),
+                                 d.get("hashtags", []), cta=config.CTA_TAG)}
+
+
+def gen_didyouknow() -> dict:
+    prompt = f"""{VOICE}
+{ACCURACY}
+
+Create ONE "Did You Know" card. Either (A) a ranked comparison suited to a bar
+chart (3-6 items with real % values), OR (B) a single astonishing true fact.
+Prefer (A) when a good real dataset exists (e.g. % DNA shared across species,
+genome sizes, time scales).
+
+Respond ONLY as JSON. For (A):
+{{"mode":"bars","title":"short question headline","title_size":64,
+  "lede":"one setup line; wrap the metric in <span class='hl'>...</span>",
+  "bars":[{{"name":"label","sub":"optional small note or empty","val":<int 0-100>}}],
+  "footer_sub":"a question + 👇","fb_hook":"","fb_body":"","hashtags":["6-9"]}}
+For (B):
+{{"mode":"fact","title":"headline","lede":"the fact in 1-2 sentences, <b>key</b>",
+  "callout":"why it's amazing/useful","footer_sub":"a question + 👇",
+  "fb_hook":"","fb_body":"","hashtags":["6-9"]}}
+All numbers must be real."""
+    d = _json(_gen(prompt, temp=0.8))
+    data = {"series": "Did You Know", "title": d["title"],
+            "title_size": d.get("title_size", 66), "lede": d.get("lede"),
+            "footer_sub": d.get("footer_sub", "Which surprised you most? 👇")}
+    if d.get("mode") == "bars" and d.get("bars"):
+        data["bars"] = d["bars"][:6]
+    else:
+        data["callout"] = d.get("callout")
+    return {"template": "card.html.j2", "data": data, "kind": "didyouknow",
+            "caption": _caption(d.get("fb_hook", d["title"]), d.get("fb_body", ""),
+                                 d.get("hashtags", []))}
+
+
+# ---------------------------------------------------------------------------
+# GROUNDED pillars (Gemini + Google Search) — current & real
+# ---------------------------------------------------------------------------
+def gen_opportune() -> dict:
+    from datetime import date
+    today = date.today().isoformat()
+    prompt = f"""{VOICE}
+{ACCURACY}
+Today is {today}. Use Google Search to find ONE real, currently-open opportunity
+for biotech/biochem/bioinformatics students or early scientists — a conference,
+scholarship, fellowship, competition, or summer school — whose registration or
+application DEADLINE is still in the future. Verify it is real and current.
+
+Respond ONLY as JSON:
+{{"title":"short event/opportunity name, max 7 words","kicker":"type · field, e.g. 'Scholarship · Genomics'",
+  "lede":"1-2 sentences: what it is and who it's great for",
+  "meta":[{{"icon":"📅","label":"When","value":"<b>dates or N/A</b>"}},
+          {{"icon":"📍","label":"Where","value":"location or Online"}},
+          {{"icon":"⏳","label":"Deadline","value":"<b>the real deadline</b>"}}],
+  "link_display":"short domain e.g. slas.org/awards","url":"the real full URL",
+  "tip":"one practical sentence on why to apply",
+  "fb_hook":"caption hook","fb_body":"caption body","hashtags":["6-9"]}}"""
+    d = _json(_gen(prompt, grounded=True, temp=0.3))
+    data = {"series": "Bio · Opportune", "kicker": d.get("kicker"),
+            "title": d["title"], "title_size": 58, "lede": d.get("lede"),
+            "meta": d.get("meta", []), "linkchip": d.get("link_display"),
+            "callout": d.get("tip"), "callout_tone": "gold",
+            "footer_sub": "Save before the deadline 🔖"}
+    url = d.get("url", "")
+    cap_body = (d.get("fb_body", "") + (f"\n\n🔗 {url}" if url else "")).strip()
+    return {"template": "card.html.j2", "data": data, "kind": "opportune",
+            "caption": _caption(d.get("fb_hook", d["title"]), cap_body,
+                                 d.get("hashtags", [])), "url": url}
+
+
+def gen_paper() -> dict:
+    from datetime import date
+    prompt = f"""{VOICE}
+{ACCURACY}
+Today is {date.today().isoformat()}. Use Google Search to find ONE real, recent
+(last ~12 months) notable paper/result in biotech/biochem/bioinformatics. Summarize
+it AND extract the concrete business or career OPPORTUNITY it points to.
+
+Respond ONLY as JSON:
+{{"title":"vivid plain-English headline, max 7 words","kicker":"subfield e.g. 'Gene Editing'",
+  "blocks":[{{"head":"📄 The paper","body":"what they did & found, plain English, <b>key</b>; name the journal if sure"}},
+            {{"head":"💰 The opportunity","body":"the business/career angle; name a company if one exists","tone":"blue"}}],
+  "takeaway":"one 'for you' sentence on where the value/jobs are, <b>key</b>",
+  "fb_hook":"caption hook","fb_body":"caption body","hashtags":["6-9"]}}
+Do not fabricate a DOI or company; omit if unsure."""
+    d = _json(_gen(prompt, grounded=True, temp=0.4))
+    data = {"series": "Paper → Opportunity", "kicker": d.get("kicker"),
+            "title": d["title"], "title_size": 60, "blocks": d.get("blocks", []),
+            "callout": d.get("takeaway"), "callout_tone": "gold",
+            "footer_sub": "Follow for the science behind the startups"}
+    return {"template": "card.html.j2", "data": data, "kind": "paper",
+            "caption": _caption(d.get("fb_hook", d["title"]), d.get("fb_body", ""),
+                                 d.get("hashtags", []))}
+
+
+def gen_tech() -> dict:
+    """Latest-tech card as a photo-hero (needs a Pexels image)."""
+    from datetime import date
+    prompt = f"""{VOICE}
+{ACCURACY}
+Today is {date.today().isoformat()}. Use Google Search to find ONE real, recent
+development/trend in biotech or bioinformatics worth explaining simply.
+
+Respond ONLY as JSON:
+{{"title":"plain headline, max 6 words","kicker":"the subfield, Title Case",
+  "lede":"1-2 sentences explaining it simply, <b>key</b>",
+  "photo_queries":["3-4 attractive stock-photo search queries that fit it"],
+  "fb_hook":"caption hook","fb_body":"caption body","hashtags":["6-9"]}}"""
+    d = _json(_gen(prompt, grounded=True, temp=0.5))
+    data = {"layout": "hero", "series": "New Tech", "kicker": d.get("kicker"),
+            "title": d["title"], "lede": d.get("lede"),
+            "footer_sub": "Follow for the tech shaping biotech",
+            "_photo_queries": d.get("photo_queries", ["modern laboratory science"])}
+    return {"template": "card_photo.html.j2", "data": data, "kind": "tech",
+            "caption": _caption(d.get("fb_hook", d["title"]), d.get("fb_body", ""),
+                                 d.get("hashtags", []))}
+
+
+def _event_like(kind, series, search_line, meta_spec, footer, cta=None):
+    """Shared builder for event/job (graphic card with meta rows + link)."""
+    from datetime import date
+    prompt = f"""{VOICE}
+{ACCURACY}
+Today is {date.today().isoformat()}. {search_line}
+Respond ONLY as JSON:
+{{"title":"max 7 words","kicker":"short label","lede":"1-2 sentences",
+  "meta":[{meta_spec}],
+  "link_display":"short domain","url":"real full URL","tip":"one practical sentence",
+  "fb_hook":"","fb_body":"","hashtags":["6-9"]}}"""
+    d = _json(_gen(prompt, grounded=True, temp=0.3))
+    data = {"series": series, "kicker": d.get("kicker"), "title": d["title"],
+            "title_size": 58, "lede": d.get("lede"), "meta": d.get("meta", []),
+            "linkchip": d.get("link_display"), "callout": d.get("tip"),
+            "callout_tone": "gold", "footer_sub": footer}
+    url = d.get("url", "")
+    body = (d.get("fb_body", "") + (f"\n\n🔗 {url}" if url else "")).strip()
+    return {"template": "card.html.j2", "data": data, "kind": kind,
+            "caption": _caption(d.get("fb_hook", d["title"]), body, d.get("hashtags", []), cta=cta), "url": url}
+
+
+def gen_event() -> dict:
+    return _event_like(
+        "event", "Bio · Event",
+        "Use Google Search to find ONE real, UPCOMING flagship conference in genomics/biotech/"
+        "bioinformatics (e.g. AGBT, ISMB/ECCB, Keystone Symposia, Gordon Research Conferences, "
+        "SynBioBeta, Festival of Genomics, ASHG) whose dates are in the future. Verify it is real.",
+        '{"icon":"📅","label":"When","value":"<b>dates</b>"},{"icon":"📍","label":"Where","value":"city, country or Virtual"},{"icon":"🎟️","label":"Register","value":"status or deadline"}',
+        "Save this conference 🔖")
+
+
+def gen_job() -> dict:
+    return _event_like(
+        "job", "Bio · Jobs",
+        "Use Google Search to find ONE real, currently-open JOB or INTERNSHIP in biotech/biochem/"
+        "bioinformatics suited to a student or early-career scientist (entry-level, internship or "
+        "junior). Verify it is open now.",
+        '{"icon":"🏢","label":"Company","value":"<b>name</b>"},{"icon":"📍","label":"Location","value":"city / Remote"},{"icon":"💼","label":"Type","value":"Full-time / Internship / Junior"}',
+        "Tag someone who should apply 👇", cta=config.CTA_TAG)
+
+
+def _photo_current(kind, series, search_line, extra_fields, footer, link_field, data_extra=None, cta=None):
+    """Shared builder for news/tutorial (photo-hero + link)."""
+    from datetime import date
+    prompt = f"""{VOICE}
+{ACCURACY}
+Today is {date.today().isoformat()}. {search_line}
+Respond ONLY as JSON:
+{{"title":"max 8 words","kicker":"topic","lede":"1-2 sentences, <b>key</b>",{extra_fields}
+  "url":"real full URL","photo_queries":["3-4 attractive stock-photo queries"],
+  "fb_hook":"","fb_body":"","hashtags":["6-9"]}}"""
+    d = _json(_gen(prompt, grounded=True, temp=0.4))
+    data = {"layout": "hero", "series": series, "kicker": d.get("kicker"),
+            "title": d["title"], "lede": d.get("lede"),
+            "linkchip": d.get(link_field), "footer_sub": footer,
+            "_photo_queries": d.get("photo_queries", ["modern laboratory science"])}
+    if data_extra:
+        data.update(data_extra)
+    url = d.get("url", "")
+    body = (d.get("fb_body", "") + (f"\n\n🔗 {url}" if url else "")).strip()
+    return {"template": "card_photo.html.j2", "data": data, "kind": kind,
+            "caption": _caption(d.get("fb_hook", d["title"]), body, d.get("hashtags", []), cta=cta), "url": url}
+
+
+def gen_news() -> dict:
+    return _photo_current(
+        "news", "Bio · News",
+        "Use Google Search to find ONE real, RECENT (last ~2 weeks) news development in biotech/"
+        "biochem/bioinformatics worth sharing. Verify it.",
+        '"source_display":"short source domain e.g. nature.com",',
+        "Follow for biotech news that matters", "source_display")
+
+
+def gen_tutorial() -> dict:
+    return _photo_current(
+        "tutorial", "Tutorial",
+        "Use Google Search to find ONE genuinely excellent, FREE, currently-available tutorial / "
+        "course / learning resource for biotech/biochem/bioinformatics students (e.g. Rosalind, "
+        "Galaxy Training, an EMBL-EBI course, a famous MOOC, a great YouTube series). Verify it is free.",
+        '"resource_display":"short domain of the resource",',
+        "Save this to learn later 🔖", "resource_display", cta=config.CTA_SAVE)
+
+
+def gen_success() -> dict:
+    from datetime import date
+    prompt = f"""{VOICE}
+{ACCURACY}
+Use Google Search to find ONE real, inspiring success story in biotech/biochem/bioinformatics —
+a scientist, founder or company whose story motivates students. Verify the facts; no invented
+quotes or awards.
+Respond ONLY as JSON:
+{{"title":"short inspiring headline, max 7 words","kicker":"who / field",
+  "lede":"2-3 short sentences telling the story, <b>key</b>",
+  "stat":{{"n":"one real number","l":"what it represents, <=9 words"}},
+  "photo_queries":["3-4 SYMBOLIC stock-photo queries WITHOUT a person's face (labs, molecules, DNA, glassware) — the image is representative, never implying it is the real person"],
+  "fb_hook":"","fb_body":"","hashtags":["6-9"]}}"""
+    d = _json(_gen(prompt, grounded=True, temp=0.5))
+    data = {"layout": "full", "series": "Success Story", "kicker": d.get("kicker"),
+            "title": d["title"], "title_size": 60, "lede": d.get("lede"),
+            "stat": d.get("stat"), "footer_sub": "Follow for stories that inspire",
+            "_photo_queries": d.get("photo_queries", ["scientist laboratory success"])}
+    return {"template": "card_photo.html.j2", "data": data, "kind": "success",
+            "caption": _caption(d.get("fb_hook", d["title"]), d.get("fb_body", ""), d.get("hashtags", []))}
+
+
+# Registry (per-card generators; used for the one grounded "current" card).
+GENERATORS = {
+    "education": gen_education, "business": gen_business, "didyouknow": gen_didyouknow,
+    "opportune": gen_opportune, "paper": gen_paper, "tech": gen_tech,
+    "event": gen_event, "job": gen_job, "news": gen_news,
+    "tutorial": gen_tutorial, "success": gen_success,
+}
+
+# ---------------------------------------------------------------------------
+# FREE-TIER FRUGAL BATCH: one Gemini call for several evergreen cards, plus one
+# grounded call for a current card. Everything falls back to the local bank so a
+# batch always ships even when the quota is spent.
+# ---------------------------------------------------------------------------
+import random as _random
+
+
+def _json_array(text: str) -> list:
+    cleaned = re.sub(r"```(?:json)?|```", "", text).strip()
+    s, e = cleaned.find("["), cleaned.rfind("]")
+    if s == -1 or e == -1:
+        raise ValueError("no JSON array in model output")
+    return json.loads(cleaned[s:e + 1])
+
+
+def _map(kind: str, d: dict) -> dict:
+    """Map one parsed object to a {template,data,caption,kind} result."""
+    if kind == "education":
+        data = {"series": "Bio · Education", "kicker": d.get("kicker"),
+                "title": d["title"], "lede": d.get("lede"),
+                "stats": d.get("stats", [])[:2], "callout": d.get("callout")}
+        cta = config.CTA_FOLLOW
+    elif kind == "business":
+        data = {"series": "Bio · Business Idea", "kicker": "Venture", "title_size": 66,
+                "title": d["title"], "lede": d.get("lede"),
+                "blocks": d.get("blocks", []), "footer_sub": "Would you build this? 👇"}
+        cta = config.CTA_TAG
+    elif kind == "didyouknow":
+        data = {"series": "Did You Know", "title": d["title"],
+                "title_size": d.get("title_size", 64), "lede": d.get("lede"),
+                "footer_sub": d.get("footer_sub", "Which surprised you most? 👇")}
+        if d.get("bars"):
+            data["bars"] = d["bars"][:6]
+        else:
+            data["callout"] = d.get("callout")
+        cta = config.CTA_FOLLOW
+    elif kind == "interactive":
+        data = {"series": d.get("pill", "Poll"), "kicker": d.get("kicker"),
+                "title": d["title"], "title_size": d.get("title_size", 60),
+                "lede": d.get("lede"), "options": d.get("options", [])[:4],
+                "callout": d.get("callout"), "callout_tone": "gold",
+                "footer_sub": d.get("footer_sub", "Vote in the comments 👇")}
+        cta = config.CTA_FOLLOW
+    else:
+        raise ValueError(f"no batch mapper for {kind}")
+    return {"template": "card.html.j2", "data": data, "kind": kind,
+            "caption": _caption(d.get("fb_hook", d["title"]), d.get("fb_body", ""),
+                                 d.get("hashtags", []), cta=cta)}
+
+
+_BATCH_SPEC = {
+    "education": "a 'Bio-Education' fact with REAL numbers -> fields: kicker, title (<=8 words), lede (use <b>key</b>), stats (array of exactly 2 {n,l}), callout, fb_hook, fb_body, hashtags (6-9)",
+    "business": "a concrete 'Bio-Business Idea' venture -> fields: title (<=6 words), lede, blocks (array of 3: {head:'💡 The idea',body},{head:'💰 Who pays',body},{head:'🚀 Why now',body,tone:'blue'}), fb_hook, fb_body, hashtags",
+    "didyouknow": "a 'Did You Know' bar-chart fact with 3-6 REAL percentages -> fields: title, lede (wrap the metric in <span class='hl'>...</span>), bars (array of {name,sub,val 0-100}), footer_sub, fb_hook, fb_body, hashtags",
+    "interactive": "a poll / this-or-that / quiz that makes people comment -> fields: pill (short label: 'Poll' or 'This or That' or 'Quiz'), title (the question), lede (1 short setup line or empty), options (array of 2-4 {key:'A'/'B'/'C', text}), callout (the vote instruction e.g. 'Comment A or B 👇'), footer_sub, fb_hook, fb_body, hashtags",
+}
+
+
+def batch_evergreen(kinds: list[str]) -> list[dict]:
+    """ONE Gemini call for several evergreen cards; per-kind fallback on failure."""
+    if not kinds:
+        return []
+    specs = "\n".join(f"{i+1}) {k}: {_BATCH_SPEC[k]}" for i, k in enumerate(kinds))
+    prompt = f"""{VOICE}
+{ACCURACY}
+
+Produce content for {len(kinds)} different cards. Respond with ONLY a JSON ARRAY of
+exactly {len(kinds)} objects, IN THIS EXACT ORDER (no markdown, no extra text):
+{specs}
+
+Each object contains only that card's fields. All facts and numbers must be real."""
+    try:
+        arr = _json_array(_gen(prompt, temp=0.75))
+    except Exception as exc:
+        print(f"  batch_evergreen failed ({exc}); using local fallbacks")
+        return [fallbacks.pick(k) for k in kinds]
+    out = []
+    for i, k in enumerate(kinds):
+        try:
+            out.append(_map(k, arr[i]))
+        except Exception as exc:
+            print(f"  mapping {k} failed ({exc}); fallback")
+            out.append(fallbacks.pick(k))
+    return out
+
+
+def current_card(kind: str) -> dict:
+    """One grounded (search) card; falls back to the evergreen bank on failure."""
+    try:
+        return GENERATORS[kind]()
+    except Exception as exc:
+        print(f"  grounded {kind} failed ({exc}); using local fallback")
+        return fallbacks.pick(kind)
+
+
+# Rotation pools so each run covers different ground. Every batch pulls 2
+# evergreen cards (ONE Gemini call) + 1 current card (ONE grounded call), so all
+# pillars cycle through over successive runs while staying free-tier friendly.
+_EVERGREEN_POOL = ["education", "business", "didyouknow", "interactive"]
+_CURRENT_POOL = ["event", "job", "paper", "tech", "news", "tutorial", "success", "opportune"]
+
+
+def build_batch(seed: str = "") -> list[dict]:
+    """A full free-tier batch: 2 evergreen cards (1 call) + 1 current card
+    (1 grounded call). ~2 Gemini calls total; fully falls back to local content.
+    """
+    rnd = _random.Random(seed or None)
+    evergreen = rnd.sample(_EVERGREEN_POOL, 2)
+    current = rnd.choice(_CURRENT_POOL)
+    results = batch_evergreen(evergreen)
+    results.append(current_card(current))
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Reel hooks — punchy, TRUE one-liners for the branded video overlay. Local (no
+# API call), so reels cost nothing against the Gemini quota.
+# ---------------------------------------------------------------------------
+REEL_HOOKS = [
+    {"pill": "Did You Know", "hook": "Your DNA is <span class='hl'>2 metres</span> long.",
+     "sub": "And it fits inside a cell millionths of a metre wide.",
+     "caption": _caption("Two metres of DNA, folded into one tiny cell 🤯",
+                         "The packing problem alone is a marvel of biology. Follow for more.",
+                         ["dna", "cellbiology", "biology", "sciencefacts", "biotechnology", "bioinformatics"])},
+    {"pill": "In 15 Seconds", "hook": "DNA → RNA → <span class='hl'>Protein</span>.",
+     "sub": "One flow of information behind almost all of life.",
+     "caption": _caption("The central dogma, in one line 🧬",
+                         "Get this and half of molecular biology clicks. Follow for more.",
+                         ["centraldogma", "molecularbiology", "biochemistry", "dna", "biology", "biotechnology"])},
+    {"pill": "New Tech", "hook": "AI can now <span class='hl'>design proteins</span> that never existed.",
+     "sub": "From a text description to a working molecule.",
+     "caption": _caption("AI is designing brand-new proteins 🤖🧬",
+                         "A grand challenge of biology, cracked. Follow for the science behind the headlines.",
+                         ["ai", "proteindesign", "bioinformatics", "biotechnology", "alphafold", "science"])},
+    {"pill": "Did You Know", "hook": "<span class='hl'>CRISPR</span> = molecular scissors you can program.",
+     "sub": "Tell it an address in the genome, and it cuts.",
+     "caption": _caption("Gene editing, explained simply ✂️🧬",
+                         "CRISPR won the 2020 Nobel and built an industry. Follow for more.",
+                         ["crispr", "geneediting", "biotechnology", "genetics", "science", "biology"])},
+    {"pill": "Science", "hook": "One <span class='hl'>E. coli</span> becomes millions overnight.",
+     "sub": "Doubling roughly every 20 minutes in ideal conditions.",
+     "caption": _caption("Why microbes are biotech's workhorses 🦠",
+                         "Fast growth = fast science and fast manufacturing. Follow for more.",
+                         ["microbiology", "ecoli", "biotechnology", "biology", "sciencefacts", "research"])},
+    {"pill": "mRNA", "hook": "mRNA doesn't change your DNA.",
+     "sub": "It's a <span class='hl'>temporary recipe</span> your cells read, then discard.",
+     "caption": _caption("Clearing up the biggest mRNA myth 💉",
+                         "A short-lived instruction, not a genome edit. Follow for clear biotech science.",
+                         ["mrna", "biotechnology", "vaccines", "science", "biology", "mythbusting"])},
+]

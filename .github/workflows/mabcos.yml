@@ -1,0 +1,59 @@
+name: MABCOS auto-post
+
+# Twice a day. GitHub cron is UTC and may be delayed 5–30 min under load.
+# Times below are 08:00 and 19:30 Pakistan time (UTC+5). Adjust if your TZ differs.
+on:
+  schedule:
+    - cron: "0 3 * * *"     # 08:00 PKT
+    - cron: "30 14 * * *"   # 19:30 PKT
+  workflow_dispatch: {}      # lets you run it manually from the Actions tab
+
+concurrency:
+  group: mabcos-post
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system deps (ffmpeg + emoji font)
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-noto-color-emoji
+
+      - uses: browser-actions/setup-chrome@v1
+        id: chrome
+        with:
+          chrome-version: stable
+
+      - name: Install Python deps
+        run: pip install -r requirements.txt
+
+      - name: Write .env from secrets
+        run: |
+          umask 177
+          cat > .env <<'EOF'
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          PEXELS_API_KEY=${{ secrets.PEXELS_API_KEY }}
+          TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}
+          FB_PAGE_TOKEN=${{ secrets.FB_PAGE_TOKEN }}
+          FB_PAGE_ID=${{ secrets.FB_PAGE_ID }}
+          AMAZON_ASSOC_TAG=${{ secrets.AMAZON_ASSOC_TAG }}
+          AMAZON_MARKETPLACE=www.amazon.com
+          EOF
+
+      - name: Generate batch
+        env:
+          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+        run: python pipeline.py
+
+      - name: Auto-post to Facebook
+        env:
+          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+        run: python autopost.py

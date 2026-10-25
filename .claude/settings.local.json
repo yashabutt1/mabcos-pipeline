@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/bin/python -m py_compile approve_bot.py notify.py)",
+      "Bash(launchctl unload *)",
+      "Bash(launchctl load *)",
+      "Bash(launchctl list *)",
+      "Bash(.venv/bin/python *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\([c.get\\('file'\\) for c in d['cards']]\\)\")",
+      "Bash(python3 -c ' *)"
+    ]
+  }
+}
