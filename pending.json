@@ -1,4 +1,35 @@
 {
   "offset": 0,
-  "items": {}
+  "items": {
+    "2026-10-26/card_1.png": {
+      "type": "card",
+      "caption": "Gene expression analysis: qPCR or RNA-seq?\n\nWhen studying gene expression, researchers often choose between the targeted precision of quantitative PCR (qPCR) and the comprehensive, discovery-oriented power of RNA sequencing (RNA-seq). Which method do you prefer for your research questions, and why? Share your insights!\n\n\ud83d\udd2c Follow @innovationthroughbiotech for daily biotech, biochem & bioinformatics insight.\n\n\ud83d\udd16 Save this \u2014 you'll want it before your next exam or interview.\n\n# #G #e #n #e #E #x #p #r",
+      "file_id": "AgACAgEAAxkDAAMLat7onk2HbnkjAtrLjOTgasVg_ToAAjoNaxvglvhGlOM2yLraivUBAAMCAAN3AAM9BA"
+    },
+    "2026-10-26/card_2.png": {
+      "type": "card",
+      "caption": "Bio-Business Idea: Custom CRISPR Guide RNA Service\n\nImagine a service that takes the guesswork out of CRISPR experiments. Our latest Bio-Business Idea focuses on providing custom-designed and in vitro validated guide RNAs. This tackles a major bottleneck in gene editing, offering precision and speed to academic and industry labs. What do you think of this venture?\n\n\ud83c\udff7\ufe0f Tag someone who's building a career in the life sciences.\n\n\ud83d\udd16 Save this \u2014 you'll want it before your next exam or interview.\n\n# #B #i #o #B #u #s #i #n",
+      "file_id": "AgACAgEAAxkDAAMMat7onzXqaICyM3KhFDMw0T5bJewAAjsNaxvglvhGdF5dLGF5Zh4BAAMCAAN3AAM9BA"
+    },
+    "2026-10-26/card_3.png": {
+      "type": "card",
+      "caption": "The conferences worth knowing \ud83c\udf9f\ufe0f\n\nAGBT, ISMB, ASHG, Keystone, Gordon \u2014 where the field meets. Which would you most want to attend? \ud83d\udc47\n\n\ud83d\udd2c Follow @innovationthroughbiotech for daily biotech, biochem & bioinformatics insight.\n\n\ud83d\udd16 Save this \u2014 you'll want it before your next exam or interview.\n\n#conference #genomics #bioinformatics #biotechnology #agbt #ismb",
+      "file_id": "AgACAgEAAxkDAAMNat7ooRjU2h2XV1G0voXN_NZFeLcAAjwNaxvglvhG0zZzn5jHR2cBAAMCAAN3AAM9BA"
+    },
+    "2026-10-26/reels/reel_1.mp4": {
+      "type": "reel",
+      "caption": "Why microbes are biotech's workhorses \ud83e\udda0\n\nFast growth = fast science and fast manufacturing. Follow for more.\n\n\ud83d\udd2c Follow @innovationthroughbiotech for daily biotech, biochem & bioinformatics insight.\n\n\ud83d\udd16 Save this \u2014 you'll want it before your next exam or interview.\n\n#microbiology #ecoli #biotechnology #biology #sciencefacts #research",
+      "file_id": "BAACAgEAAxkDAAMOat7oo1Fd0y_jHKOaYY-5TXc-LVYAAlgKAALglvhGPUb89ainm6M9BA"
+    },
+    "2026-10-26/reels/reel_2.mp4": {
+      "type": "reel",
+      "caption": "Two metres of DNA, folded into one tiny cell \ud83e\udd2f\n\nThe packing problem alone is a marvel of biology. Follow for more.\n\n\ud83d\udd2c Follow @innovationthroughbiotech for daily biotech, biochem & bioinformatics insight.\n\n\ud83d\udd16 Save this \u2014 you'll want it before your next exam or interview.\n\n#dna #cellbiology #biology #sciencefacts #biotechnology #bioinformatics",
+      "file_id": "BAACAgEAAxkDAAMPat7oplF4Gn6d0VGqtavCLYXkbr4AAlkKAALglvhGylN8vsdHkIw9BA"
+    },
+    "2026-10-26/products/ag=ynb0ec-20": {
+      "type": "product",
+      "fb_message": "\ud83d\udcda Scientific Lab Notebook (quad-ruled, bound) \u2014 Worth a spot on your shelf if this is your field \ud83d\udc47\n\n\ud83c\udff7\ufe0f Tag someone who's building a career in the life sciences.\n\nAs an Amazon Associate, MABCOS earns from qualifying purchases.",
+      "url": "https://www.amazon.com/s?k=laboratory+notebook+quad+ruled+bound&tag=ynb0ec-20"
+    }
+  }
 }
