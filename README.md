@@ -6,8 +6,7 @@ careers, tutorials, news, scholarships, business ideas, and events.
 
 Each run builds a batch of posts, renders the media, sends everything to Telegram
 with **Approve / Reject** buttons, and auto-posts only what you approve from your
-phone. It's a retarget of the proven `love-lens-pipeline` engine — same reliable
-infra (deduping, soft fallbacks, launchd scheduling), retargeted voice + content.
+phone. 
 
 ## What a batch contains (per run, ~2 runs/day)
 
@@ -56,20 +55,20 @@ pip install -r requirements.txt
 ```
 
 `bin/` (ffmpeg/ffprobe) and `music/` (royalty-free tracks) were copied from the
-love-lens pipeline, so reels work out of the box.
+previous pipeline, so reels work out of the box.
 
 ## Go live — two switches (one-time account actions you must do)
 
 The `.env` already has your shared Gemini, Pexels, Amazon, Facebook **user token**,
 and Telegram **chat id** filled in. Two blanks remain:
 
-1. **Telegram bot** — mabcos needs its **own** bot (don't reuse the Love Lens bot
+1. **Telegram bot** — mabcos needs its **own** bot (don't reuse the previous pipeline bot
    token; two bots on one token fight over updates). In Telegram, message
    **@BotFather** → `/newbot` → copy the token → set `TELEGRAM_BOT_TOKEN` in `.env`.
    Then send that new bot any message once so it can reach your chat.
 
 2. **Facebook page access** — the app behind your user token is currently granted
-   only the *Love Lens* page. Grant it the **mabcos** page too:
+   only the previously created page. Grant it the **mabcos** page too:
    - Open the [Graph API Explorer](https://developers.facebook.com/tools/explorer/),
      select your app, add permissions `pages_show_list`, `pages_read_engagement`,
      `pages_manage_posts`, and when prompted **select the innovationthroughbiotech
@@ -116,8 +115,7 @@ launchctl load ~/Library/LaunchAgents/com.mabcos.evening.plist
 launchctl load ~/Library/LaunchAgents/com.mabcos.approvebot.plist
 ```
 
-Morning slot fires 08:00, evening 19:30 (offset from the Love Lens pipeline so
-both don't run at the same minute). Each slot writes its own `output/<date>-<slot>`
+Morning slot fires 08:00, evening 19:30. Each slot writes its own `output/<date>-<slot>`
 folder and runs at most once per day (atomic lock + daily marker).
 
 ## Curating Amazon products
