@@ -89,24 +89,29 @@ def _build_reels(day_dir: Path):
     n = config.VIDEO_REELS_PER_RUN
     if n < 1:
         return [], []
-    import reel_visuals
     import fetch_video
     import fetch_music
     import compose_video
     (day_dir / "reels").mkdir(parents=True, exist_ok=True)
-    visuals = reel_visuals.pick_visuals(n, config.OUTPUT_DIR)
     hooks = random.sample(content.REEL_HOOKS, min(n, len(content.REEL_HOOKS)))
     reels, alerts = [], []
-    for i, (vis, hook) in enumerate(zip(visuals, hooks), 1):
-        print(f"· reel {i}/{n} — visual '{vis.get('category')}' — clip…")
-        clip = fetch_video.fetch_clip(vis, day_dir / "reels" / f"clip_{i}.mp4")
-        if not clip:
-            print("  no clip available; skipping this reel")
+    CLIPS_PER_REEL = 3
+    for i, hook in enumerate(hooks, 1):
+        print(f"· reel {i}/{len(hooks)} — '{hook['pill']}' — fetching clips…")
+        # Several short, RELEVANT clips (matched to the hook) cut together.
+        clip_paths = []
+        for j in range(CLIPS_PER_REEL):
+            c = fetch_video.fetch_clip({"pexels_queries": hook.get("queries", [])},
+                                       day_dir / "reels" / f"clip_{i}_{j}.mp4")
+            if c:
+                clip_paths.append(c["path"])
+        if not clip_paths:
+            print("  no clips available; skipping this reel")
             continue
         music = fetch_music.pick_track()
         reel_file = f"reel_{i}.mp4"
         try:
-            compose_video.make_reel(clip["path"], hook["hook"],
+            compose_video.make_reel(clip_paths, hook["hook"],
                                     day_dir / "reels" / reel_file, music_path=music,
                                     sub=hook.get("sub"), pill=hook.get("pill", "Reel"))
         except Exception as exc:
@@ -119,7 +124,7 @@ def _build_reels(day_dir: Path):
             except Exception:
                 pass
         reels.append({"file": reel_file, "caption": cap, "line": hook["hook"]})
-        print(f"    + reel: {hook['pill']}")
+        print(f"    + reel: {hook['pill']} ({len(clip_paths)} clips)")
     if config.VIDEO_REELS_PER_RUN >= 1 and not reels:
         if not config.ffmpeg_available():
             alerts.append("⚠️ Reels did NOT render — ffmpeg is missing. Run ./install_ffmpeg.sh.")
