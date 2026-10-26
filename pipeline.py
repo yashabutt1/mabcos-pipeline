@@ -82,10 +82,10 @@ def _product_posts() -> list[dict]:
     return posts
 
 
-def _build_reels(day_dir: Path):
-    """Build branded reels: stock clip + HTML overlay + music. Returns (reels, alerts)."""
+def _build_reels(day_dir: Path, recent=None):
+    """Build branded reels: several relevant clips + HTML overlay + music.
+    Returns (reels, alerts). Hooks avoid recently-used ones (anti-repetition)."""
     import os
-    import random
     n = config.VIDEO_REELS_PER_RUN
     if n < 1:
         return [], []
@@ -93,7 +93,7 @@ def _build_reels(day_dir: Path):
     import fetch_music
     import compose_video
     (day_dir / "reels").mkdir(parents=True, exist_ok=True)
-    hooks = random.sample(content.REEL_HOOKS, min(n, len(content.REEL_HOOKS)))
+    hooks = content.pick_reel_hooks(min(n, len(content.REEL_HOOKS)), recent)
     reels, alerts = [], []
     CLIPS_PER_REEL = 3
     for i, hook in enumerate(hooks, 1):
@@ -157,13 +157,17 @@ h2{{border-bottom:1px solid #27305e;padding-bottom:6px;margin-top:30px}}</style>
 def generate_batch(offset: int = 0) -> Path:
     day_dir = _day_dir(offset)
     print(f"Generating into {day_dir}")
-    results = content.build_batch(seed=day_dir.name)
+    recent = content.load_recent()
+    results = content.build_batch(seed=day_dir.name, recent=recent)
     cards_out = []
     for i, r in enumerate(results, 1):
         print(f"· rendering {r.get('kind')} ({r.get('template')})…")
         cards_out.append(_render_card(r, day_dir, i))
 
-    reels, alerts = _build_reels(day_dir)
+    reels, alerts = _build_reels(day_dir, recent)
+
+    # Remember what we just made so it isn't repeated for a long while.
+    content.save_recent([c.get("title") for c in cards_out] + [r.get("line") for r in reels])
 
     products = _product_posts()
     try:

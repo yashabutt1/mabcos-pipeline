@@ -408,13 +408,21 @@ _BATCH_SPEC = {
 }
 
 
-def batch_evergreen(kinds: list[str]) -> list[dict]:
+def _avoid_note(recent) -> str:
+    recent = [r for r in (recent or []) if r][-24:]
+    if not recent:
+        return ""
+    return ("\n\nDo NOT repeat or closely echo any of these recently-posted titles/"
+            "topics — pick genuinely DIFFERENT ones:\n- " + "\n- ".join(recent))
+
+
+def batch_evergreen(kinds: list[str], recent=None) -> list[dict]:
     """ONE Gemini call for several evergreen cards; per-kind fallback on failure."""
     if not kinds:
         return []
     specs = "\n".join(f"{i+1}) {k}: {_BATCH_SPEC[k]}" for i, k in enumerate(kinds))
     prompt = f"""{VOICE}
-{ACCURACY}
+{ACCURACY}{_avoid_note(recent)}
 
 Produce content for {len(kinds)} different cards. Respond with ONLY a JSON ARRAY of
 exactly {len(kinds)} objects, IN THIS EXACT ORDER (no markdown, no extra text):
@@ -422,27 +430,27 @@ exactly {len(kinds)} objects, IN THIS EXACT ORDER (no markdown, no extra text):
 
 Each object contains only that card's fields. All facts and numbers must be real."""
     try:
-        arr = _json_array(_gen(prompt, temp=0.75))
+        arr = _json_array(_gen(prompt, temp=0.85))
     except Exception as exc:
         print(f"  batch_evergreen failed ({exc}); using local fallbacks")
-        return [fallbacks.pick(k) for k in kinds]
+        return [fallbacks.pick(k, recent) for k in kinds]
     out = []
     for i, k in enumerate(kinds):
         try:
             out.append(_map(k, arr[i]))
         except Exception as exc:
             print(f"  mapping {k} failed ({exc}); fallback")
-            out.append(fallbacks.pick(k))
+            out.append(fallbacks.pick(k, recent))
     return out
 
 
-def current_card(kind: str) -> dict:
+def current_card(kind: str, recent=None) -> dict:
     """One grounded (search) card; falls back to the evergreen bank on failure."""
     try:
         return GENERATORS[kind]()
     except Exception as exc:
         print(f"  grounded {kind} failed ({exc}); using local fallback")
-        return fallbacks.pick(kind)
+        return fallbacks.pick(kind, recent)
 
 
 # Rotation pools so each run covers different ground. Every batch pulls 2
@@ -452,16 +460,48 @@ _EVERGREEN_POOL = ["education", "business", "didyouknow", "interactive"]
 _CURRENT_POOL = ["event", "job", "paper", "tech", "news", "tutorial", "success", "opportune"]
 
 
-def build_batch(seed: str = "") -> list[dict]:
+def build_batch(seed: str = "", recent=None) -> list[dict]:
     """A full free-tier batch: 2 evergreen cards (1 call) + 1 current card
     (1 grounded call). ~2 Gemini calls total; fully falls back to local content.
+    ``recent`` is a list of recently-posted titles to steer away from (anti-repeat).
     """
     rnd = _random.Random(seed or None)
     evergreen = rnd.sample(_EVERGREEN_POOL, 2)
     current = rnd.choice(_CURRENT_POOL)
-    results = batch_evergreen(evergreen)
-    results.append(current_card(current))
+    results = batch_evergreen(evergreen, recent)
+    results.append(current_card(current, recent))
     return results
+
+
+# ---------------------------------------------------------------------------
+# Rolling history so the same fact/hook doesn't repeat for weeks (anti-repetition)
+# ---------------------------------------------------------------------------
+from pathlib import Path as _Path
+HISTORY_FILE = _Path(__file__).parent / "history.json"
+
+
+def load_recent() -> list:
+    try:
+        return json.loads(HISTORY_FILE.read_text(encoding="utf-8")).get("titles", [])
+    except Exception:
+        return []
+
+
+def save_recent(new_titles) -> None:
+    titles = (load_recent() + [t for t in new_titles if t])[-120:]
+    try:
+        HISTORY_FILE.write_text(json.dumps({"titles": titles}, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def pick_reel_hooks(n: int, recent=None) -> list[dict]:
+    """Pick n reel hooks, preferring ones not used recently (anti-repetition)."""
+    avoid = {fallbacks._norm(x) for x in (recent or [])}
+    fresh = [h for h in REEL_HOOKS if fallbacks._norm(h["hook"]) not in avoid]
+    pool = fresh if len(fresh) >= n else REEL_HOOKS[:]
+    _random.shuffle(pool)
+    return pool[:n]
 
 
 # ---------------------------------------------------------------------------
@@ -505,4 +545,34 @@ REEL_HOOKS = [
      "caption": _caption("Clearing up the biggest mRNA myth 💉",
                          "A short-lived instruction, not a genome edit. Follow for clear biotech science.",
                          ["mrna", "biotechnology", "vaccines", "science", "biology", "mythbusting"])},
+    {"pill": "Biochemistry", "hook": "Enzymes make reactions up to a <span class='hl'>billion times</span> faster.",
+     "sub": "It's why life runs at body temperature, not in a furnace.",
+     "queries": ["enzyme reaction animation", "molecular catalysis render", "protein enzyme 3d", "laboratory reaction colorful", "molecular structure blue"],
+     "caption": _caption("The tiny machines that make life possible ⚙️🧬",
+                         "Enzymes are nature's catalysts — staggeringly fast and specific. Follow for more.",
+                         ["enzymes", "biochemistry", "biology", "metabolism", "biotechnology", "science"])},
+    {"pill": "Did You Know", "hook": "Your mitochondria have their <span class='hl'>own DNA</span>.",
+     "sub": "A clue they were once free-living bacteria.",
+     "queries": ["mitochondria animation", "cell organelle render", "microscope cells", "molecular biology animation", "cell nucleus microscope"],
+     "caption": _caption("There's a second genome inside you 🧬",
+                         "Mitochondrial DNA is inherited from your mother alone. Follow for more.",
+                         ["mitochondria", "cellbiology", "evolution", "genetics", "biology", "biotechnology"])},
+    {"pill": "Genomics", "hook": "Reading a human genome once cost <span class='hl'>$3 billion</span>.",
+     "sub": "Today it's a few hundred dollars.",
+     "queries": ["dna sequencing machine", "genomics laboratory", "genome data screen", "sequencing lab equipment", "data visualization dna"],
+     "caption": _caption("The fastest-falling price in science 📉🧬",
+                         "Cheap sequencing is quietly reshaping medicine and biology. Follow for more.",
+                         ["genomics", "sequencing", "dna", "bioinformatics", "biotechnology", "science"])},
+    {"pill": "New Tech", "hook": "AI predicted <span class='hl'>200 million</span> protein structures.",
+     "sub": "A 50-year puzzle, solved — and shared for free.",
+     "queries": ["protein structure 3d render", "ai data visualization", "molecular model rotating", "computer science laboratory", "futuristic data"],
+     "caption": _caption("AlphaFold changed biology overnight 🤖🧬",
+                         "Free protein structures are accelerating drug discovery worldwide. Follow for more.",
+                         ["alphafold", "ai", "bioinformatics", "proteins", "biotechnology", "science"])},
+    {"pill": "Science", "hook": "Much of modern medicine is <span class='hl'>brewed</span>, not synthesized.",
+     "sub": "Engineered microbes make insulin, antibiotics and more.",
+     "queries": ["bioreactor fermentation", "laboratory fermentation tanks", "pharmaceutical production lab", "biotech manufacturing", "green biotech lab"],
+     "caption": _caption("Your medicine might be made by microbes 🦠💊",
+                         "Recombinant insulin and many antibiotics come from engineered cells. Follow for more.",
+                         ["biotechnology", "fermentation", "insulin", "biomanufacturing", "science", "biology"])},
 ]

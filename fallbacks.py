@@ -265,8 +265,16 @@ BANK = {
 }
 
 
-def pick(kind: str) -> dict:
-    """Return one fallback result dict for a pillar (random)."""
+def _norm(s: str) -> str:
+    import re
+    return re.sub(r"[^a-z0-9]+", " ", (s or "").lower()).strip()
+
+
+def pick(kind: str, avoid=None) -> dict:
+    """Return one fallback result dict for a pillar, preferring entries whose
+    title isn't in ``avoid`` (a set/list of normalized recent titles)."""
     import copy
     pool = BANK.get(kind) or BANK["education"]
-    return copy.deepcopy(random.choice(pool))
+    avoid = {_norm(a) for a in (avoid or [])}
+    fresh = [e for e in pool if _norm(e.get("data", {}).get("title", "")) not in avoid]
+    return copy.deepcopy(random.choice(fresh or pool))
