@@ -67,8 +67,25 @@ _PRODUCT_INTROS = [
 def _product_posts() -> list[dict]:
     if config.PRODUCT_POSTS_PER_RUN < 1:
         return []
+    import os
+    from datetime import date
     import fetch_products
-    products = fetch_products.pick_products(config.PRODUCT_POSTS_PER_RUN)
+    allp = fetch_products.load_products()
+    if not allp:
+        return []
+    # Stateless rotation: cycle through the whole pool over time, 2 picks/day, no
+    # repeat until the pool is exhausted. Works in the cloud with no state file.
+    slot = os.getenv("MABCOS_SLOT", "")
+    try:
+        half = 1 if int(slot[:2]) >= 12 else 0
+    except Exception:
+        half = 0
+    start = (date.today().toordinal() * 2 + half) % len(allp)
+    products = []
+    for k in range(config.PRODUCT_POSTS_PER_RUN):
+        p = dict(allp[(start + k) % len(allp)])
+        p["affiliate_url"] = fetch_products.build_affiliate_url(p["url"])
+        products.append(p)
     posts = []
     for p in products:
         name, url = p["name"], p["affiliate_url"]
@@ -170,12 +187,6 @@ def generate_batch(offset: int = 0) -> Path:
     content.save_recent([c.get("title") for c in cards_out] + [r.get("line") for r in reels])
 
     products = _product_posts()
-    try:
-        import fetch_products
-        if config.PRODUCT_POSTS_PER_RUN >= 1 and fetch_products.unposted_count() <= fetch_products.LOW_POOL_THRESHOLD:
-            alerts.append(f"⚠️ Amazon product pool low: {fetch_products.unposted_count()} left. Ask Claude to refresh products.txt.")
-    except Exception:
-        pass
 
     (day_dir / "captions.json").write_text(json.dumps(
         {"cards": cards_out, "video_reels": reels, "products": products, "alerts": alerts},

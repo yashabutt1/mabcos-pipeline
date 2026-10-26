@@ -1,22 +1,29 @@
-# MABCOS Amazon product pool — one "Name | URL" per line.
-# These are REAL product (/dp/) links (looked up on Amazon), which actually
-# convert — your Associate tag (AMAZON_ASSOC_TAG=ynb0ec-20) is forced onto every
-# link automatically. Add/replace anytime; the daily run never repeats a product
-# until the others have been used. Books convert best for this audience.
+# MABCOS Amazon product pool — REAL product (/dp/) links, auto-rotated and
+# auto-tagged by the pipeline. You do NOT maintain this file: the daily run picks
+# one, forces your Associate tag (ynb0ec-20) onto it, and never repeats it until
+# the rest have been used. (When your account becomes eligible for Amazon's
+# Product Advertising API — after 3 sales — this can switch to fully-dynamic live
+# search; ask then.)
 
-# --- Core textbooks (students' most-wanted) ---
+# --- Core textbooks ---
 Lehninger Principles of Biochemistry | https://www.amazon.com/dp/1464126119
 Molecular Biology of the Cell (Alberts) | https://www.amazon.com/dp/0393884821
 Campbell Biology | https://www.amazon.com/dp/0135188741
+Molecular Biology of the Gene (Watson) | https://www.amazon.com/dp/0321762436
+Biochemistry (Berg & Stryer) | https://www.amazon.com/dp/1464126100
+Essential Cell Biology | https://www.amazon.com/dp/1324033355
 
 # --- Bioinformatics & coding ---
 Bioinformatics Algorithms (Compeau & Pevzner) | https://www.amazon.com/dp/0990374602
 Biological Sequence Analysis (Durbin) | https://www.amazon.com/dp/0521629713
 Python for Biologists (Martin Jones) | https://www.amazon.com/dp/1492346136
+Bioinformatics Data Skills (Vince Buffalo) | https://www.amazon.com/dp/1449367372
 
-# --- Popular-science reads (broad appeal, great gifts) ---
+# --- Popular science reads ---
 The Gene: An Intimate History (Mukherjee) | https://www.amazon.com/dp/147673352X
 The Code Breaker — CRISPR & Jennifer Doudna (Isaacson) | https://www.amazon.com/dp/1982115866
+A Crack in Creation — The Gene-Editing Revolution (Doudna) | https://www.amazon.com/dp/1328915360
+The Emperor of All Maladies — A Biography of Cancer (Mukherjee) | https://www.amazon.com/dp/1668047039
 
 # --- Lab & study gear ---
 Scientific Lab Notebook (quad-ruled) | https://www.amazon.com/dp/B0016060LG
@@ -24,3 +31,5 @@ Unisex Lab Coat | https://www.amazon.com/dp/B0CX9SQX3X
 Anti-Fog Lab Safety Goggles (NoCry) | https://www.amazon.com/dp/B08Y5JTKMQ
 Nitrile Exam Gloves (box) | https://www.amazon.com/dp/B08TPQ1LFX
 Digital Lab Timer (Sper Scientific) | https://www.amazon.com/dp/B0DWY9V1D4
+Student Compound Microscope | https://www.amazon.com/dp/B0BYYY51HJ
+Adjustable Single-Channel Micropipette (ONiLAB) | https://www.amazon.com/dp/B07HLWFJT7

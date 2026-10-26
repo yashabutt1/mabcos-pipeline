@@ -57,6 +57,9 @@ jobs:
           AMAZON_MARKETPLACE=www.amazon.com
           EOF
 
+      - name: Unique batch id (keeps morning/evening separate in the queue)
+        run: echo "MABCOS_SLOT=$(date -u +%H%M)" >> "$GITHUB_ENV"
+
       - name: Generate batch
         env:
           CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
