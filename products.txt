@@ -1,29 +1,26 @@
 # MABCOS Amazon product pool — one "Name | URL" per line.
-# See products.example.txt for how this works. Your Associate tag is forced on
-# every link. These seeds use Amazon SEARCH links (never 404, carry your tag).
-# For better previews + conversion, replace each with a specific …/dp/ASIN… link
-# to the exact best-seller edition you want to recommend. Add more anytime.
+# These are REAL product (/dp/) links (looked up on Amazon), which actually
+# convert — your Associate tag (AMAZON_ASSOC_TAG=ynb0ec-20) is forced onto every
+# link automatically. Add/replace anytime; the daily run never repeats a product
+# until the others have been used. Books convert best for this audience.
 
 # --- Core textbooks (students' most-wanted) ---
-Lehninger Principles of Biochemistry | https://www.amazon.com/s?k=Lehninger+Principles+of+Biochemistry
-Molecular Biology of the Cell (Alberts) | https://www.amazon.com/s?k=Molecular+Biology+of+the+Cell+Alberts
-Campbell Biology | https://www.amazon.com/s?k=Campbell+Biology
-Voet Biochemistry | https://www.amazon.com/s?k=Voet+Biochemistry
-Molecular Biology of the Gene (Watson) | https://www.amazon.com/s?k=Molecular+Biology+of+the+Gene
+Lehninger Principles of Biochemistry | https://www.amazon.com/dp/1464126119
+Molecular Biology of the Cell (Alberts) | https://www.amazon.com/dp/0393884821
+Campbell Biology | https://www.amazon.com/dp/0135188741
 
 # --- Bioinformatics & coding ---
-Bioinformatics Algorithms (Compeau & Pevzner) | https://www.amazon.com/s?k=Bioinformatics+Algorithms+Compeau+Pevzner
-Python for Biologists (Martin Jones) | https://www.amazon.com/s?k=Python+for+Biologists+Martin+Jones
-Biological Sequence Analysis (Durbin) | https://www.amazon.com/s?k=Biological+Sequence+Analysis+Durbin
+Bioinformatics Algorithms (Compeau & Pevzner) | https://www.amazon.com/dp/0990374602
+Biological Sequence Analysis (Durbin) | https://www.amazon.com/dp/0521629713
+Python for Biologists (Martin Jones) | https://www.amazon.com/dp/1492346136
 
 # --- Popular-science reads (broad appeal, great gifts) ---
-The Gene: An Intimate History (Mukherjee) | https://www.amazon.com/s?k=The+Gene+An+Intimate+History+Mukherjee
-The Machinery of Life (David Goodsell) | https://www.amazon.com/s?k=The+Machinery+of+Life+Goodsell
-The Code Breaker (CRISPR, Isaacson) | https://www.amazon.com/s?k=The+Code+Breaker+Isaacson
+The Gene: An Intimate History (Mukherjee) | https://www.amazon.com/dp/147673352X
+The Code Breaker — CRISPR & Jennifer Doudna (Isaacson) | https://www.amazon.com/dp/1982115866
 
 # --- Lab & study gear ---
-Scientific Lab Notebook (quad-ruled, bound) | https://www.amazon.com/s?k=laboratory+notebook+quad+ruled+bound
-Unisex Lab Coat | https://www.amazon.com/s?k=lab+coat+unisex
-Anti-fog Safety Goggles | https://www.amazon.com/s?k=anti+fog+lab+safety+goggles
-Nitrile Exam Gloves (box) | https://www.amazon.com/s?k=nitrile+exam+gloves+powder+free
-Digital Lab Timer | https://www.amazon.com/s?k=digital+lab+timer
+Scientific Lab Notebook (quad-ruled) | https://www.amazon.com/dp/B0016060LG
+Unisex Lab Coat | https://www.amazon.com/dp/B0CX9SQX3X
+Anti-Fog Lab Safety Goggles (NoCry) | https://www.amazon.com/dp/B08Y5JTKMQ
+Nitrile Exam Gloves (box) | https://www.amazon.com/dp/B08TPQ1LFX
+Digital Lab Timer (Sper Scientific) | https://www.amazon.com/dp/B0DWY9V1D4
