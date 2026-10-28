@@ -19,8 +19,42 @@ except Exception:
     pass
 
 import post_fb
+import peak
 
-PENDING = Path(__file__).resolve().parent / "pending.json"
+HERE = Path(__file__).resolve().parent
+PENDING = HERE / "pending.json"
+PUBLISHED = HERE / "published.json"
+COMMENTS = HERE / "comments.json"
+
+
+def _load_json(path, default):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return dict(default)
+
+
+def _save_json(path, data):
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+
+def _record_published(res, it):
+    """Remember a post we just published so comment_watch can watch it for comments."""
+    pid = (res or {}).get("post_id") or (res or {}).get("id")
+    if not pid:
+        return
+    import time
+    data = _load_json(PUBLISHED, {"targets": []})
+    data.setdefault("targets", [])
+    data["targets"].append({
+        "id": pid,
+        "post_url_id": (res or {}).get("post_id") or pid,
+        "type": it.get("type"),
+        "caption": (it.get("caption") or it.get("fb_message") or "")[:160],
+        "ts": int(time.time()),
+    })
+    data["targets"] = data["targets"][-60:]
+    _save_json(PUBLISHED, data)
 
 
 def _token() -> str:
@@ -99,6 +133,35 @@ def _poll_once(state, long_poll: int = 0) -> int:
         if ":" not in data:
             continue
         action, cb = data.split(":", 1)
+
+        # --- comment-reply callbacks (cb is a Facebook comment id) ---
+        if action in ("sendreply", "ignorecmt"):
+            cstate = _load_json(COMMENTS, {"seen": [], "pending": {}})
+            pend = cstate.get("pending", {})
+            info = pend.get(cb)
+            if not info:
+                _answer(qid, "Expired or already handled")
+                continue
+            if action == "ignorecmt":
+                pend.pop(cb, None)
+                cstate["pending"] = pend
+                _save_json(COMMENTS, cstate)
+                _answer(qid, "Dismissed")
+                _edit(chat, mid, "🙈 Dismissed — no reply sent")
+                continue
+            try:
+                post_fb.post_comment_reply(cb, info["draft"])
+                pend.pop(cb, None)
+                cstate["pending"] = pend
+                _save_json(COMMENTS, cstate)
+                _answer(qid, "Reply sent ✅")
+                _edit(chat, mid, f"✅ Reply sent:\n{info['draft']}")
+            except Exception as exc:
+                _answer(qid, "Failed — tap again")
+                print(f"reply failed for {cb}: {exc}")
+            continue
+
+        # --- post approve/reject (cb is a queue item key) ---
         it = items.get(cb)
         if not it:
             _answer(qid, "Expired or already handled")
@@ -111,20 +174,26 @@ def _poll_once(state, long_poll: int = 0) -> int:
         if action != "approve":
             continue
         try:
+            when = peak.next_publish_ts()   # None = post now; else schedule to next peak
             if it["type"] == "product":
-                post_fb.post_link(it.get("fb_message", ""), it.get("url", ""))
+                res = post_fb.post_link(it.get("fb_message", ""), it.get("url", ""), when=when)
             elif it["type"] == "reel":
                 tmp = _download(it["file_id"], ".mp4")
-                post_fb.post_reel(tmp, it.get("caption", ""))
+                res = post_fb.post_reel(tmp, it.get("caption", ""), when=when)
                 os.unlink(tmp)
             else:  # card (photo)
                 tmp = _download(it["file_id"], ".jpg")
-                post_fb.post_card(tmp, it.get("caption", ""))
+                res = post_fb.post_card(tmp, it.get("caption", ""), when=when)
                 os.unlink(tmp)
+            _record_published(res, it)
             items.pop(cb, None)
             posted += 1
-            _answer(qid, "Posted ✅")
-            _edit(chat, mid, "✅ Posted to the page")
+            if when:
+                _answer(qid, "Scheduled ✅")
+                _edit(chat, mid, f"⏰ Scheduled for peak time — {peak.describe(when)}")
+            else:
+                _answer(qid, "Posted ✅")
+                _edit(chat, mid, "✅ Posted to the page")
         except Exception as exc:
             # keep the item so a re-tap retries; the consumed update won't come back
             _answer(qid, "Failed — tap Approve again")

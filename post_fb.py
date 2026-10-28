@@ -90,7 +90,7 @@ def build_caption(caption: str) -> str:
     return caption.strip()
 
 
-def post_card(image_path, caption):
+def post_card(image_path, caption, when=None):
     image_path = Path(image_path)
     if not image_path.exists():
         raise FileNotFoundError(image_path)
@@ -101,6 +101,9 @@ def post_card(image_path, caption):
     with image_path.open("rb") as fh:
         files = {"source": (image_path.name, fh, "image/png")}
         data = {"caption": build_caption(caption), "access_token": page_token}
+        if when:  # schedule for a peak window instead of publishing now
+            data["published"] = "false"
+            data["scheduled_publish_time"] = int(when)
         try:
             resp = requests.post(url, files=files, data=data, timeout=120)
             payload = resp.json()
@@ -114,12 +117,15 @@ def post_card(image_path, caption):
             raise RuntimeError(f"Network error while posting to Facebook: {exc}") from exc
 
 
-def _post_video_fallback(page_id, token, video_path, caption):
+def _post_video_fallback(page_id, token, video_path, caption, when=None):
     """Plain video post (used if the Reels API is unavailable for this token)."""
     url = f"https://graph.facebook.com/v21.0/{page_id}/videos"
     with Path(video_path).open("rb") as fh:
         files = {"source": (Path(video_path).name, fh, "video/mp4")}
         data = {"description": build_caption(caption), "access_token": token}
+        if when:
+            data["published"] = "false"
+            data["scheduled_publish_time"] = int(when)
         resp = requests.post(url, files=files, data=data, timeout=300)
     payload = resp.json()
     if not resp.ok:
@@ -128,10 +134,11 @@ def _post_video_fallback(page_id, token, video_path, caption):
     return {"id": payload.get("id"), "as": "video"}
 
 
-def post_reel(video_path, caption):
+def post_reel(video_path, caption, when=None):
     """Publish a vertical MP4 as a Facebook Reel via the resumable Reels API.
 
     Falls back to a normal video post if the Reels endpoint rejects the token.
+    ``when`` (unix seconds) schedules the reel for a peak window instead of now.
     """
     video_path = Path(video_path)
     if not video_path.exists():
@@ -160,29 +167,69 @@ def post_reel(video_path, caption):
         if not up.ok or not uj.get("success", True):
             raise RuntimeError(f"upload failed: {up.status_code} {up.text[:400]}")
 
-        # 3) publish
-        fin = requests.post(f"{base}/{page_id}/video_reels",
-                            data={"upload_phase": "finish", "video_id": video_id,
-                                  "video_state": "PUBLISHED",
-                                  "description": build_caption(caption),
-                                  "access_token": token}, timeout=120)
+        # 3) publish (or schedule for a peak window)
+        fin_data = {"upload_phase": "finish", "video_id": video_id,
+                    "description": build_caption(caption), "access_token": token}
+        if when:
+            fin_data["video_state"] = "SCHEDULED"
+            fin_data["scheduled_publish_time"] = int(when)
+        else:
+            fin_data["video_state"] = "PUBLISHED"
+        fin = requests.post(f"{base}/{page_id}/video_reels", data=fin_data, timeout=120)
         fj = fin.json()
         if not fin.ok or not fj.get("success", False):
             raise RuntimeError(json.dumps(fj, indent=2))
-        print(f"Published reel {video_id}")
+        print(f"{'Scheduled' if when else 'Published'} reel {video_id}")
         return {"id": video_id, "as": "reel"}
     except Exception as exc:
         print(f"Reels API failed ({exc}); falling back to a normal video post.")
-        return _post_video_fallback(page_id, token, video_path, caption)
+        return _post_video_fallback(page_id, token, video_path, caption, when=when)
 
 
-def post_link(message, link):
+def post_link(message, link, when=None):
     """Publish a link post to the Page feed (Facebook renders the link preview)."""
     page_id = _env("FB_PAGE_ID")
     token = _resolve_page_access_token(page_id)
     url = f"https://graph.facebook.com/v21.0/{page_id}/feed"
     data = {"message": message, "link": link, "access_token": token}
+    if when:
+        data["published"] = "false"
+        data["scheduled_publish_time"] = int(when)
     resp = requests.post(url, data=data, timeout=60)
+    payload = resp.json()
+    if not resp.ok:
+        raise RuntimeError(json.dumps(payload, indent=2))
+    return {"id": payload.get("id")}
+
+
+# --------------------------------------------------------------------------- comments
+def resolve_token() -> str:
+    """Public helper: resolve a usable Page access token once (cache-friendly)."""
+    return _resolve_page_access_token(_env("FB_PAGE_ID"))
+
+
+def page_id() -> str:
+    return _env("FB_PAGE_ID")
+
+
+def list_comments(object_id: str, token: str = None, limit: int = 25) -> list[dict]:
+    """Recent comments on a post/photo/reel, newest first."""
+    token = token or resolve_token()
+    url = f"https://graph.facebook.com/v21.0/{object_id}/comments"
+    params = {"access_token": token, "fields": "id,message,from,created_time",
+              "order": "reverse_chronological", "limit": limit}
+    resp = requests.get(url, params=params, timeout=30)
+    payload = resp.json()
+    if not resp.ok:
+        raise RuntimeError(json.dumps(payload, indent=2))
+    return payload.get("data", [])
+
+
+def post_comment_reply(comment_id: str, message: str, token: str = None) -> dict:
+    """Reply to a specific comment (used only when YOU tap 'Send reply')."""
+    token = token or resolve_token()
+    url = f"https://graph.facebook.com/v21.0/{comment_id}/comments"
+    resp = requests.post(url, data={"message": message, "access_token": token}, timeout=60)
     payload = resp.json()
     if not resp.ok:
         raise RuntimeError(json.dumps(payload, indent=2))

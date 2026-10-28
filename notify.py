@@ -54,6 +54,23 @@ def send_notice(text):
     requests.post(url, data={"chat_id": chat_id, "text": text[:4000]}, timeout=60)
 
 
+def send_buttons(text, rows):
+    """Message with a custom inline keyboard. ``rows`` is a list of button rows,
+    each button a dict like {"text": "...", "callback_data": "..."} or
+    {"text": "...", "url": "..."}. Returns the Telegram payload."""
+    token = _env("TELEGRAM_BOT_TOKEN")
+    chat_id = _env("TELEGRAM_CHAT_ID")
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    data = {"chat_id": chat_id, "text": text[:4000],
+            "reply_markup": json.dumps({"inline_keyboard": rows}),
+            "disable_web_page_preview": "true"}
+    resp = requests.post(url, data=data, timeout=60)
+    payload = resp.json()
+    if not payload.get("ok"):
+        raise RuntimeError(json.dumps(payload, indent=2))
+    return payload
+
+
 def send_message(text, callback_data):
     token = _env("TELEGRAM_BOT_TOKEN")
     chat_id = _env("TELEGRAM_CHAT_ID")
