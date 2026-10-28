@@ -289,7 +289,10 @@ def _poll_once(state, long_poll: int = 0) -> int:
         if action != "approve":
             continue
         try:
-            when = peak.next_publish_ts()   # None = post now; else schedule to next peak
+            # Post IMMEDIATELY on approval (visible at once on FB + Instagram). Peak
+            # timing is handled by WHEN the batch alerts you, not by delaying the post —
+            # scheduling made approved posts invisible for hours and caused confusion.
+            when = None
             if it["type"] == "product":
                 res = post_fb.post_link(it.get("fb_message", ""), it.get("url", ""), when=when)
             elif it["type"] == "reel":
