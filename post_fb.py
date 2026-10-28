@@ -225,6 +225,23 @@ def list_comments(object_id: str, token: str = None, limit: int = 25) -> list[di
     return payload.get("data", [])
 
 
+def photo_public_url(photo_id: str, token: str = None):
+    """Public CDN URL of a posted photo — used as the Instagram image source."""
+    token = token or resolve_token()
+    r = requests.get(f"https://graph.facebook.com/v21.0/{photo_id}",
+                     params={"fields": "images", "access_token": token}, timeout=30).json()
+    imgs = r.get("images") or []
+    return imgs[0]["source"] if imgs else None
+
+
+def video_source_url(video_id: str, token: str = None):
+    """Public source URL of a posted video/reel, if the token can read it."""
+    token = token or resolve_token()
+    r = requests.get(f"https://graph.facebook.com/v21.0/{video_id}",
+                     params={"fields": "source", "access_token": token}, timeout=30).json()
+    return r.get("source")
+
+
 def post_comment_reply(comment_id: str, message: str, token: str = None) -> dict:
     """Reply to a specific comment (used only when YOU tap 'Send reply')."""
     token = token or resolve_token()

@@ -142,6 +142,29 @@ def _send_share_nudge(pid: str, caption: str) -> None:
         print(f"share nudge failed: {exc}")
 
 
+def _cross_post_instagram(res, it):
+    """Mirror a just-published post to Instagram for extra reach. Uses only public,
+    token-free Facebook-CDN media URLs; if one isn't available (e.g. a reel source),
+    it simply skips IG for that item. No-ops cleanly until Instagram is set up."""
+    try:
+        import instagram
+    except Exception:
+        return
+    try:
+        if it["type"] == "reel":
+            vurl = post_fb.video_source_url(_post_id(res))
+            igid = instagram.publish_reel(vurl, it.get("caption", "")) if vurl else None
+        elif it["type"] != "product":
+            purl = post_fb.photo_public_url(_post_id(res))
+            igid = instagram.publish_image(purl, it.get("caption", "")) if purl else None
+        else:
+            igid = None
+        if igid:
+            print(f"cross-posted to Instagram: {igid}")
+    except Exception as exc:
+        print(f"IG cross-post skipped: {exc}")
+
+
 def _token() -> str:
     t = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
     if not t:
@@ -287,6 +310,7 @@ def _poll_once(state, long_poll: int = 0) -> int:
                     except Exception as exc:
                         print(f"first comment failed: {exc}")
                 _send_share_nudge(pid, it.get("caption", "") or it.get("fb_message", ""))
+                _cross_post_instagram(res, it)
         except Exception as exc:
             # keep the item so a re-tap retries; the consumed update won't come back
             _answer(qid, "Failed — tap Approve again")
