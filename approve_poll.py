@@ -44,11 +44,11 @@ def _save(state: dict) -> None:
     PENDING.write_text(json.dumps(state, indent=2), encoding="utf-8")
 
 
-def _get_updates(offset: int):
+def _get_updates(offset: int, long_poll: int = 0):
     r = requests.get(f"https://api.telegram.org/bot{_token()}/getUpdates",
-                     params={"offset": offset, "timeout": 0,
+                     params={"offset": offset, "timeout": long_poll,
                              "allowed_updates": json.dumps(["callback_query"])},
-                     timeout=40)
+                     timeout=long_poll + 25)
     return r.json().get("result", [])
 
 
@@ -80,11 +80,10 @@ def _download(file_id: str, suffix: str) -> str:
     return tmp.name
 
 
-def main():
-    state = _load()
+def _poll_once(state, long_poll: int = 0) -> int:
     items = state["items"]
     offset = state.get("offset", 0)
-    updates = _get_updates(offset)
+    updates = _get_updates(offset, long_poll=long_poll)
     posted = 0
 
     for u in updates:
@@ -133,7 +132,26 @@ def main():
 
     state["offset"] = offset
     _save(state)
-    print(f"posted {posted}; {len(items)} still pending; offset={offset}")
+    return posted
+
+
+def main():
+    import time
+    budget = int(os.getenv("MABCOS_POLL_SECONDS", "0") or 0)
+    deadline = time.time() + budget
+    total = 0
+    while True:
+        # Long-poll (25s) when running a window so taps post within seconds; a
+        # single quick check otherwise.
+        total += _poll_once(_load_into(), long_poll=25 if budget else 0)
+        if budget <= 0 or time.time() >= deadline:
+            break
+    print(f"posted {total}; offset persisted")
+
+
+# Reload state each iteration so a concurrent generate commit is respected.
+def _load_into():
+    return _load()
 
 
 if __name__ == "__main__":

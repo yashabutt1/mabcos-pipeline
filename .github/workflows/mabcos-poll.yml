@@ -18,7 +18,7 @@ permissions:
 jobs:
   poll:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 24
     steps:
       - uses: actions/checkout@v4
 
@@ -39,7 +39,9 @@ jobs:
           FB_PAGE_ID=${{ secrets.FB_PAGE_ID }}
           EOF
 
-      - name: Process approvals
+      - name: Process approvals (long-poll window)
+        env:
+          MABCOS_POLL_SECONDS: "1200"   # keep polling ~20 min so taps post in seconds
         run: python approve_poll.py
 
       - name: Commit pending queue
