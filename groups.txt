@@ -1,0 +1,20 @@
+# YOUR FACEBOOK GROUPS — the share-helper sends a tappable button for each one
+# right after you approve a post, so you can share into them in a few taps.
+#
+# Facebook removed the Groups API in April 2024, so posting to groups must be
+# manual (no app can auto-post to groups without risking a spam ban). This file
+# just makes it fast: one line per group, "Name | URL".
+#
+# HOW TO FILL THIS IN:
+#   1. Open each biotech / biology / bioinformatics / science-student group you're in.
+#   2. Copy its URL from the address bar (looks like https://www.facebook.com/groups/123456).
+#   3. Add a line below:  Short Name | https://www.facebook.com/groups/123456
+#   4. Aim for 20 ACTIVE, relevant groups. Delete these example lines.
+#
+# TIP: pick groups where members actually post and comment — 10 active groups beat
+# 30 dead ones, and off-topic spamming gets you removed.
+
+# ---- replace the examples below with your real groups ----
+Biotech Students Global | https://www.facebook.com/groups/REPLACE_ME_1
+Bioinformatics Community | https://www.facebook.com/groups/REPLACE_ME_2
+Molecular Biology & Genetics | https://www.facebook.com/groups/REPLACE_ME_3

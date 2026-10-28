@@ -57,6 +57,91 @@ def _record_published(res, it):
     _save_json(PUBLISHED, data)
 
 
+def _post_id(res) -> str:
+    return (res or {}).get("post_id") or (res or {}).get("id") or ""
+
+
+import random as _random
+
+_FC_BOOST = [
+    "I reply to everyone 👇",
+    "Curious what you all think 👇",
+    "Tag someone who'd have a take on this 👇",
+    "Drop your answer below 👇",
+]
+
+
+def _first_comment(caption: str) -> str:
+    """An engaging first comment to pin the conversation — re-asks the post's own
+    question (so the top comment is a discussion starter) or a generic nudge."""
+    import re
+    body = "\n".join(l for l in (caption or "").splitlines()
+                     if not l.strip().startswith(("🔁", "🔖", "🏷️", "🔬", "#")))
+    qs = re.findall(r"[^.!?\n]*\?", body)
+    q = qs[-1].strip() if qs else ""
+    boost = _random.choice(_FC_BOOST)
+    if q and len(q) < 160:
+        return f"{q} {boost}"
+    return _random.choice([
+        "What's your take? 👇 I reply to everyone.",
+        "Agree or disagree? Tell me below 👇",
+        "Tag someone who should see this 👇",
+    ])
+
+
+def _load_groups():
+    """User's target groups from groups.txt ('Name | url' per line)."""
+    p = HERE / "groups.txt"
+    out = []
+    if not p.exists():
+        return out
+    for line in p.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "|" in line:
+            name, url = line.split("|", 1)
+            name, url = name.strip(), url.strip()
+        else:
+            name = url = line
+        if url.startswith("http"):
+            out.append((name[:28], url))
+    return out
+
+
+def _send_share_nudge(pid: str, caption: str) -> None:
+    """After a post goes live, nudge you to share it into your groups (the single
+    fastest way to get reach), with the live-post link, the caption to copy, and a
+    tappable button per group. Posting to groups must be manual — Facebook removed
+    the Groups API in 2024 — but this makes it a few taps."""
+    groups = _load_groups()
+    if not groups:
+        return
+    try:
+        import notify
+    except Exception:
+        return
+    permalink = f"https://www.facebook.com/{pid}" if pid else ""
+    text = ("📣 Live! Share it into your groups NOW — the first hour drives reach.\n"
+            + (f"\nPost: {permalink}\n" if permalink else "")
+            + "\nTap a group, then paste this caption:\n\n" + (caption or "")[:1500])
+    rows = []
+    if permalink:
+        rows.append([{"text": "🔗 Open the post", "url": permalink}])
+    pair = []
+    for name, url in groups[:20]:
+        pair.append({"text": f"➡️ {name}", "url": url})
+        if len(pair) == 2:
+            rows.append(pair)
+            pair = []
+    if pair:
+        rows.append(pair)
+    try:
+        notify.send_buttons(text, rows)
+    except Exception as exc:
+        print(f"share nudge failed: {exc}")
+
+
 def _token() -> str:
     t = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
     if not t:
@@ -194,6 +279,14 @@ def _poll_once(state, long_poll: int = 0) -> int:
             else:
                 _answer(qid, "Posted ✅")
                 _edit(chat, mid, "✅ Posted to the page")
+                # Live now: pin an engaging first comment + nudge you to share to groups.
+                pid = _post_id(res)
+                if pid and it["type"] != "product":
+                    try:
+                        post_fb.post_comment_reply(pid, _first_comment(it.get("caption", "")))
+                    except Exception as exc:
+                        print(f"first comment failed: {exc}")
+                _send_share_nudge(pid, it.get("caption", "") or it.get("fb_message", ""))
         except Exception as exc:
             # keep the item so a re-tap retries; the consumed update won't come back
             _answer(qid, "Failed — tap Approve again")
