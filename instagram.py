@@ -45,21 +45,30 @@ def _publish(igid: str, token: str, params: dict) -> str:
     cid = create.get("id")
     if not cid:
         raise RuntimeError(f"container create failed: {create}")
-    # Video/Reels need processing before they can be published.
-    if params.get("media_type") in ("REELS", "VIDEO"):
-        for _ in range(40):
-            st = requests.get(f"{G}/{cid}", params={"fields": "status_code", "access_token": token},
-                              timeout=30).json().get("status_code")
-            if st == "FINISHED":
-                break
-            if st == "ERROR":
-                raise RuntimeError("Instagram failed to process the video")
-            time.sleep(6)
-    pub = requests.post(f"{G}/{igid}/media_publish",
-                        data={"creation_id": cid, "access_token": token}, timeout=60).json()
-    if not pub.get("id"):
-        raise RuntimeError(f"media_publish failed: {pub}")
-    return pub["id"]
+    # ALL media (images included) need a moment to finish processing before publish —
+    # publishing too early returns code 9007 "media is not ready". Poll until FINISHED.
+    is_video = params.get("media_type") in ("REELS", "VIDEO")
+    for _ in range(40 if is_video else 12):
+        st = requests.get(f"{G}/{cid}", params={"fields": "status_code", "access_token": token},
+                          timeout=30).json().get("status_code")
+        if st == "FINISHED":
+            break
+        if st == "ERROR":
+            raise RuntimeError("Instagram failed to process the media")
+        time.sleep(6 if is_video else 3)
+    # Publish, retrying briefly if Instagram still reports the media isn't ready (9007).
+    last = None
+    for _ in range(5):
+        pub = requests.post(f"{G}/{igid}/media_publish",
+                            data={"creation_id": cid, "access_token": token}, timeout=60).json()
+        if pub.get("id"):
+            return pub["id"]
+        last = pub
+        if (pub.get("error", {}) or {}).get("code") == 9007:
+            time.sleep(4)
+            continue
+        break
+    raise RuntimeError(f"media_publish failed: {last}")
 
 
 def publish_image(image_url: str, caption: str, token: str = None):
