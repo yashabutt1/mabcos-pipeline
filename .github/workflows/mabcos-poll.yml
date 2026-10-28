@@ -45,7 +45,7 @@ jobs:
 
       - name: Process approvals + comment replies (long-poll window)
         env:
-          MABCOS_POLL_SECONDS: "120"   # short window so runs finish fast + logs are readable
+          MABCOS_POLL_SECONDS: "1200"   # ~20 min so taps post within seconds of approving
         run: python approve_poll.py
 
       - name: Commit queue + comment state
