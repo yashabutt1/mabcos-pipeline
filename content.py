@@ -48,8 +48,11 @@ CAPTION STYLE — follow exactly, it drives reach:
 - "fb_body" delivers on that hook in 2-4 SHORT paragraphs (a blank line between
   each), written like a mini news story: the what, the how, and the real NUMBERS
   (percentages, costs, scale). Add a one-line credibility note or "Source:" when
-  relevant. End with ONE short question that invites a comment. At most ONE emoji
-  in the whole body, and never at the start of a line.
+  relevant. End with ONE short, EASY-to-answer question — a this-or-that, a yes/no,
+  "which would you pick?", or "guess before you read" — the kind of question someone
+  replies to in 3 seconds. Easy questions get fast comments, and early comments are
+  what trigger Facebook to show the post to more people. At most ONE emoji in the whole
+  body, and never at the start of a line.
 - "hashtags": at most 3, lowercase, relevant. (Facebook is not Instagram.)
 All numbers must be real and verifiable."""
 
@@ -93,8 +96,14 @@ def _shorten(text: str, limit: int) -> str:
     return (cut or text[:limit]) + "…"
 
 
+# Rotate CTAs toward ACTIONS that trigger Facebook distribution (share > save > tag),
+# with Follow as the occasional default. Comments come from the body's question.
+_ACTION_CTAS = [config.CTA_SHARE, config.CTA_SHARE, config.CTA_SAVE, config.CTA_SAVE,
+                config.CTA_TAG, config.CTA_TAG, config.CTA_FOLLOW]
+
+
 def _caption(hook: str, body: str, hashtags: list[str], cta: str = None) -> str:
-    cta = cta or config.CTA_FOLLOW
+    cta = cta or _random.choice(_ACTION_CTAS)
     tags = " ".join("#" + t.lstrip("#") for t in (hashtags or [])[:3])  # FB ≠ IG: keep it light
     parts = [p for p in [_clean_hook(hook), (body or "").strip(), cta, tags] if p]
     return "\n\n".join(parts)
@@ -624,16 +633,23 @@ _CURRENT_POOL = ["sciencenews", "sciencenews", "sciencenews", "event", "event", 
                  "paper", "tech", "tutorial", "success", "opportune"]
 
 
-def build_batch(seed: str = "", recent=None) -> list[dict]:
-    """A full free-tier batch: 2 evergreen cards (1 call) + 1 current card
-    (1 grounded call). ~2 Gemini calls total; fully falls back to local content.
-    ``recent`` is a list of recently-posted titles to steer away from (anti-repeat).
+def build_batch(seed: str = "", recent=None, n_cards: int = None) -> list[dict]:
+    """A batch of ``n_cards`` feed cards (default config.CARDS_PER_RUN). Leans toward
+    the timely, engaging 'current' pillars (real science news, upcoming events, papers)
+    with some evergreen for variety; evergreen cards share one Gemini call. Falls back
+    fully to local content when quota is spent. ``recent`` steers away from repeats.
     """
     rnd = _random.Random(seed or None)
-    evergreen = rnd.sample(_EVERGREEN_POOL, 2)
-    current = rnd.choice(_CURRENT_POOL)
-    results = batch_evergreen(evergreen, recent)
-    results.append(current_card(current, recent))
+    n = n_cards if n_cards is not None else getattr(config, "CARDS_PER_RUN", 2)
+    n = max(1, n)
+    # ~60% current (news/events — the posts that pull reach), rest evergreen.
+    plan = ["current" if rnd.random() < 0.6 else "evergreen" for _ in range(n)]
+    ev = [rnd.choice(_EVERGREEN_POOL) for k in plan if k == "evergreen"]
+    results = batch_evergreen(ev, recent) if ev else []
+    for k in plan:
+        if k == "current":
+            results.append(current_card(rnd.choice(_CURRENT_POOL), recent))
+    rnd.shuffle(results)
     return results
 
 

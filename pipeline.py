@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import os
 import random
 import sys
 from pathlib import Path
@@ -186,7 +187,10 @@ def generate_batch(offset: int = 0) -> Path:
     # Remember what we just made so it isn't repeated for a long while.
     content.save_recent([c.get("title") for c in cards_out] + [r.get("line") for r in reels])
 
-    products = _product_posts()
+    # One affiliate product a day, not one per run — post it on the lunch run (08:00
+    # UTC ≈ 13:00 PKT). MABCOS_SLOT is the run's UTC HHMM; empty locally → include it.
+    slot_hr = os.getenv("MABCOS_SLOT", "")[:2]
+    products = _product_posts() if slot_hr in ("", "08", "09") else []
 
     (day_dir / "captions.json").write_text(json.dumps(
         {"cards": cards_out, "video_reels": reels, "products": products, "alerts": alerts},

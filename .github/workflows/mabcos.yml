@@ -1,11 +1,14 @@
 name: MABCOS generate + queue
 
-# Twice a day. GitHub cron is UTC and may be delayed 5–30 min under load.
-# Times below are 08:00 and 19:30 Pakistan time (UTC+5). Adjust if your TZ differs.
+# Three times a day, at peak activity windows so alerts (and the posts you approve)
+# land when people are online. GitHub cron is UTC and may be delayed 5–30 min.
+# Times below are Pakistan time (UTC+5) — morning, lunch, evening. Adjust if your
+# audience sits in another timezone (check Page Insights for when YOUR followers are on).
 on:
   schedule:
-    - cron: "0 3 * * *"     # 08:00 PKT
-    - cron: "30 14 * * *"   # 19:30 PKT
+    - cron: "0 3 * * *"     # 08:00 PKT — morning
+    - cron: "0 8 * * *"     # 13:00 PKT — lunch
+    - cron: "0 15 * * *"    # 20:00 PKT — evening
   workflow_dispatch:         # lets you run it manually from the Actions tab
     inputs:
       dry_run:

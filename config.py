@@ -62,11 +62,14 @@ DECORATE_FLORALS = False
 # REELS-FIRST: reels are the only format Facebook pushes to NON-followers, so
 # they're weighted heaviest — that's the growth engine. Feed cards mostly reach
 # existing followers.
-CARDS_PER_RUN = 1              # short insight/fact cards (-> ~2/day)
+# Three generate runs a day (morning/lunch/evening peak windows), so posts spread
+# across peak activity instead of dumping. Per run: 1 reel + 1 card (reel-led), plus
+# one affiliate product a day → ~7 candidates/day, so you comfortably approve 6+.
+CARDS_PER_RUN = 1              # one feed card per run (-> ~3/day), leans to timely/engaging pillars
 PARAGRAPH_CARDS_PER_RUN = 1    # explainer micro-essay cards (-> ~2/day, shareable)
 REELS_PER_RUN = 0              # reel SCRIPTS are not posted — off to save quota
-VIDEO_REELS_PER_RUN = 2        # finished video reels (-> ~4/day, the growth engine)
-PRODUCT_POSTS_PER_RUN = 1      # Amazon affiliate product recommendations (-> ~2/day)
+VIDEO_REELS_PER_RUN = 1        # finished video reels (-> ~3/day, the growth engine)
+PRODUCT_POSTS_PER_RUN = 1      # Amazon affiliate product recommendations (gated to 1/day)
 ENGAGEMENT_POSTS_PER_RUN = 1   # interactive "comment below" posts (-> ~2/day)
 REFLECTION_POSTS_PER_RUN = 1   # long-form essay around a famous science quote (-> ~2/day)
 
