@@ -300,7 +300,17 @@ Respond ONLY as JSON:
             "caption": _caption(d.get("fb_hook", d["title"]), body, d.get("hashtags", []), cta=cta), "url": url}
 
 
-def gen_event() -> dict:
+def gen_event(recent=None) -> dict:
+    """Prefer a REAL upcoming event scraped from curated listing sites (quota-free,
+    with real date/place/link); fall back to a grounded Gemini search, then the bank."""
+    recent = recent if recent is not None else load_recent()
+    try:
+        ev = _pick_event(recent)
+    except Exception as exc:
+        print(f"  event sources unavailable ({exc}); using Gemini search")
+        ev = None
+    if ev:
+        return _event_from_source(ev)
     return _event_like(
         "event", "Bio · Event",
         "Use Google Search to find ONE real, UPCOMING flagship conference in genomics/biotech/"
@@ -308,6 +318,66 @@ def gen_event() -> dict:
         "SynBioBeta, Festival of Genomics, ASHG) whose dates are in the future. Verify it is real.",
         '{"icon":"📅","label":"When","value":"<b>dates</b>"},{"icon":"📍","label":"Where","value":"city, country or Virtual"},{"icon":"🎟️","label":"Register","value":"status or deadline"}',
         "Save this conference 🔖")
+
+
+def _pick_event(recent) -> dict | None:
+    """One fresh, soon upcoming event not already covered in ``recent``."""
+    import random
+    import event_sources
+    evs = event_sources.fetch_events()
+    if not evs:
+        return None
+    avoid = {fallbacks._norm(x) for x in (recent or [])}
+    fresh = [e for e in evs if fallbacks._norm(e["title"]) not in avoid]
+    pool = fresh or evs
+    # Bias toward the soonest events (timely) while keeping some variety.
+    return random.choice(pool[:max(3, len(pool) * 2 // 3)])
+
+
+def _event_from_source(ev: dict) -> dict:
+    """Render a scraped real event as a catchy MABCOS event card."""
+    import event_sources
+    loc = ev["location"] or "See details"
+    dom = event_sources.domain(ev["link"])
+    prompt = f"""{VOICE}
+{CAPTION_STYLE}
+Write a short, exciting MABCOS post about this REAL upcoming event. Do NOT change the
+name, date or place, and do not invent a venue or speakers. Make students and scientists
+want to attend or share it.
+EVENT: {ev['title']}
+DATE: {ev['date']}
+PLACE: {loc}
+Respond ONLY as JSON:
+{{"title":"a punchy 4-7 word card headline (not the full event name)",
+  "lede":"1 sentence on who it's for / why it matters, <b>key</b>",
+  "fb_hook":"scroll-stopping first line, no emoji",
+  "fb_body":"2-3 short lines: what it is, why go, who should attend; end with a question",
+  "hashtags":["2-3"]}}"""
+    try:
+        d = _json(_gen(prompt, grounded=False, temp=0.6))
+    except Exception as exc:
+        print(f"  event rewrite failed ({exc}); using the listing directly")
+        where = f" · {loc}" if ev["location"] else ""
+        d = {"title": _shorten(ev["title"], 52),
+             "lede": f"Mark your calendar — <b>{ev['date']}</b>{where}",
+             "fb_hook": f"{ev['title']} — {ev['date']}" + (f", {loc}" if ev["location"] else ""),
+             "fb_body": (f"Happening {ev['date']}" + (f" in {loc}" if ev["location"] else "")
+                         + ". Worth a look if you're in biotech — details and registration at the link."),
+             "hashtags": ["biotech", "conference", "biotechnology"]}
+    meta = [{"icon": "📅", "label": "When", "value": f"<b>{ev['date']}</b>"}]
+    if ev["location"]:
+        meta.append({"icon": "📍", "label": "Where", "value": loc})
+    meta.append({"icon": "🔗", "label": "Info", "value": dom})
+    data = {"series": "Bio · Event", "kicker": "Upcoming Event", "title": d["title"],
+            "title_size": 54, "lede": d.get("lede"), "meta": meta,
+            "linkchip": dom, "callout": "Save it, share it, show up.", "callout_tone": "gold",
+            "footer_sub": "Upcoming in biotech"}
+    url = ev["link"]
+    where = f" · {loc}" if ev["location"] else ""
+    body = (d.get("fb_body", "") + f"\n\n📅 {ev['date']}{where}\n🔗 {url}").strip()
+    return {"template": "card.html.j2", "data": data, "kind": "event",
+            "caption": _caption(d.get("fb_hook", ev["title"]), body, d.get("hashtags", []),
+                                cta="Save this conference 🔖"), "url": url}
 
 
 def gen_job() -> dict:
@@ -550,8 +620,8 @@ def current_card(kind: str, recent=None) -> dict:
 _EVERGREEN_POOL = ["education", "business", "didyouknow", "interactive"]
 # "sciencenews" (real headlines from Nature/GEN/IEEE/ScienceDaily/Harvard) is weighted
 # high — it's the most credible, current, source-linked pillar.
-_CURRENT_POOL = ["sciencenews", "sciencenews", "sciencenews", "event", "job", "paper",
-                 "tech", "tutorial", "success", "opportune"]
+_CURRENT_POOL = ["sciencenews", "sciencenews", "sciencenews", "event", "event", "job",
+                 "paper", "tech", "tutorial", "success", "opportune"]
 
 
 def build_batch(seed: str = "", recent=None) -> list[dict]:
