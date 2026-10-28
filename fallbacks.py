@@ -202,6 +202,29 @@ _INTERACTIVE = [
                      ["biology", "quiz", "molecularbiology", "dna", "biochemistry", "sciencestudent"])},
 ]
 
+_OPINION = [
+    {"template": "card.html.j2", "kind": "opinion", "data": {
+        "series": "Hot Take", "kicker": "Opinion", "title": "Bioinformatics should be mandatory in every biology degree",
+        "title_size": 56,
+        "lede": "You can run a gel, but can you read a <b>FASTQ file</b>? The lab moved to code — the syllabus didn't.",
+        "callout": "Agree or disagree? Tell me below 👇", "callout_tone": "gold",
+        "footer_sub": "Where do you stand?"},
+     "caption": _cap("Every biology student should have to write at least one line of code before they graduate",
+                     "The modern lab runs on sequencing data, not just pipettes — yet most degrees still treat coding as optional. "
+                     "Students who can't analyze their own data end up dependent on whoever can.\n\nWhere do you stand?",
+                     ["bioinformatics", "stem", "biotechnology"])},
+    {"template": "card.html.j2", "kind": "opinion", "data": {
+        "series": "Hot Take", "kicker": "Opinion", "title": "Your grades matter less than your lab skills",
+        "title_size": 58,
+        "lede": "A 4.0 that can't troubleshoot a failed PCR loses to a <b>3.2 who can</b>.",
+        "callout": "Agree or disagree? 👇", "callout_tone": "gold",
+        "footer_sub": "Where do you stand?"},
+     "caption": _cap("In biotech hiring, the student who logged 500 hours at the bench usually beats the one with the perfect GPA",
+                     "Transcripts show you can pass exams. Hands-on skill shows you can be trusted with a $200k instrument "
+                     "and a 3-week experiment. Guess which one managers actually ask about.\n\nWhere do you stand?",
+                     ["biotechnology", "careers", "sciencestudent"])},
+]
+
 _EVENT = [
     {"template": "card.html.j2", "kind": "event", "data": {
         "series": "Bio · Event", "kicker": "Conferences to watch",
@@ -270,7 +293,7 @@ _SUCCESS = [
 BANK = {
     "education": _EDUCATION, "business": _BUSINESS, "didyouknow": _DIDYOUKNOW,
     "opportune": _OPPORTUNE, "paper": _PAPER, "tech": _TECH,
-    "interactive": _INTERACTIVE, "event": _EVENT, "job": _JOB,
+    "interactive": _INTERACTIVE, "opinion": _OPINION, "event": _EVENT, "job": _JOB,
     "news": _NEWS, "tutorial": _TUTORIAL, "success": _SUCCESS,
     # Last-resort fallback if every live feed is down; real posts carry source links.
     "sciencenews": _NEWS,

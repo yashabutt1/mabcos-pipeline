@@ -55,6 +55,10 @@ def fetch(queries, out_path, orientation: str = "landscape",
         return None
     if isinstance(queries, str):
         queries = [queries]
+    # Safety net: if the specific queries find nothing, still land an attractive,
+    # on-brand photo rather than a blank card.
+    queries = list(queries) + ["laboratory science blue", "dna molecule abstract",
+                               "microscope research lab"]
     out_path = Path(out_path)
     used = set(_recent())
     headers = {"Authorization": key}

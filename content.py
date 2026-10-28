@@ -562,6 +562,12 @@ def _map(kind: str, d: dict) -> dict:
                 "callout": d.get("callout"), "callout_tone": "gold",
                 "footer_sub": d.get("footer_sub", "Vote in the comments 👇")}
         cta = config.CTA_FOLLOW
+    elif kind == "opinion":
+        data = {"series": d.get("pill", "Hot Take"), "kicker": d.get("kicker", "Opinion"),
+                "title": d["title"], "title_size": d.get("title_size", 58),
+                "lede": d.get("lede"), "callout": d.get("callout", "Agree or disagree? 👇"),
+                "callout_tone": "gold", "footer_sub": d.get("footer_sub", "Agree or disagree? 👇")}
+        cta = config.CTA_SHARE
     else:
         raise ValueError(f"no batch mapper for {kind}")
     return {"template": "card.html.j2", "data": data, "kind": kind,
@@ -574,6 +580,7 @@ _BATCH_SPEC = {
     "business": "a concrete 'Bio-Business Idea' venture -> fields: title (<=6 words), lede, blocks (array of 3: {head:'💡 The idea',body},{head:'💰 Who pays',body},{head:'🚀 Why now',body,tone:'blue'}), fb_hook, fb_body, hashtags",
     "didyouknow": "a 'Did You Know' bar-chart fact with 3-6 REAL percentages -> fields: title, lede (wrap the metric in <span class='hl'>...</span>), bars (array of {name,sub,val 0-100}), footer_sub, fb_hook, fb_body, hashtags",
     "interactive": "a poll / this-or-that / quiz that makes people comment -> fields: pill (short label: 'Poll' or 'This or That' or 'Quiz'), title (the question), lede (1 short setup line or empty), options (array of 2-4 {key:'A'/'B'/'C', text}), callout (the vote instruction e.g. 'Comment A or B 👇'), footer_sub, fb_hook, fb_body, hashtags",
+    "opinion": "a bold but FAIR opinion / hot-take about biotech, science careers, ethics, or the future of the field that makes people want to weigh in (never offensive, never misinformation) -> fields: pill ('Hot Take' or 'Opinion'), title (the claim in <=10 words), lede (1 line of nuance, use <b>key</b>), callout (e.g. 'Agree or disagree? Tell me below 👇'), footer_sub, fb_hook, fb_body (make the case in 2-3 short lines, END with 'Where do you stand?'), hashtags (3)",
 }
 
 
@@ -626,7 +633,10 @@ def current_card(kind: str, recent=None) -> dict:
 # Rotation pools so each run covers different ground. Every batch pulls 2
 # evergreen cards (ONE Gemini call) + 1 current card (ONE grounded call), so all
 # pillars cycle through over successive runs while staying free-tier friendly.
-_EVERGREEN_POOL = ["education", "business", "didyouknow", "interactive"]
+# interactive (polls) and opinion (hot-takes) are weighted up — they pull the most
+# comments, and comments are what push a post to more people.
+_EVERGREEN_POOL = ["education", "business", "didyouknow",
+                   "interactive", "interactive", "opinion", "opinion"]
 # "sciencenews" (real headlines from Nature/GEN/IEEE/ScienceDaily/Harvard) is weighted
 # high — it's the most credible, current, source-linked pillar.
 _CURRENT_POOL = ["sciencenews", "sciencenews", "sciencenews", "event", "event", "job",

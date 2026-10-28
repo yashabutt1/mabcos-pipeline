@@ -26,6 +26,8 @@ import config
 import content
 import cards
 import fetch_photo
+import fallbacks
+import quality
 
 
 def _day_dir(offset: int = 0) -> Path:
@@ -39,7 +41,7 @@ def _render_card(result: dict, day_dir: Path, idx: int) -> dict:
     data = result["data"]
     template = result.get("template", "card.html.j2")
     if template == "card_photo.html.j2":
-        queries = data.pop("_photo_queries", ["modern laboratory science"])
+        queries = data.pop("_photo_queries", None) or _DEFAULT_PHOTO_QUERIES
         orient = "landscape" if data.get("layout") == "hero" else "portrait"
         ph = fetch_photo.fetch(queries, day_dir / "backgrounds" / f"photo_{idx}.jpg",
                                orientation=orient)
@@ -56,6 +58,32 @@ def _render_card(result: dict, day_dir: Path, idx: int) -> dict:
     cards.make_card(data, day_dir / "cards" / card_file, template=template)
     return {"file": card_file, "title": data.get("title"),
             "caption": result["caption"], "kind": result.get("kind")}
+
+
+# Attractive, varied fallbacks so a photo card is never a dull or broken image.
+_DEFAULT_PHOTO_QUERIES = [
+    "vibrant science laboratory macro", "glowing dna helix abstract blue",
+    "scientist microscope cinematic light", "colorful molecular structure render",
+    "modern biotech lab clean",
+]
+
+
+def _ensure_quality(r: dict, recent, seen: set):
+    """Pass only COMPLETE, non-repetitive cards. A rejected card is replaced with a
+    clean local fallback of the same pillar; if none passes, it's dropped entirely —
+    better to post one fewer card than to ship a broken or duplicate one."""
+    ok, probs = quality.check(r)
+    if ok and not quality.is_redundant(r, seen):
+        return r
+    reason = "duplicate" if ok else ", ".join(probs)
+    print(f"  ⚠ rejected {r.get('kind')} card ({reason}); swapping in a clean fallback")
+    kind = r.get("kind", "education")
+    for _ in range(4):
+        alt = fallbacks.pick(kind, recent)
+        if quality.check(alt)[0] and not quality.is_redundant(alt, seen):
+            return alt
+    print(f"  · no clean fallback for {kind}; dropping this slot")
+    return None
 
 
 _PRODUCT_INTROS = [
@@ -177,12 +205,17 @@ def generate_batch(offset: int = 0) -> Path:
     print(f"Generating into {day_dir}")
     recent = content.load_recent()
     results = content.build_batch(seed=day_dir.name, recent=recent)
+    seen = quality.seed_seen(recent)
     cards_out = []
-    for i, r in enumerate(results, 1):
+    for r in results:
+        r = _ensure_quality(r, recent, seen)
+        if r is None:
+            continue
         print(f"· rendering {r.get('kind')} ({r.get('template')})…")
-        cards_out.append(_render_card(r, day_dir, i))
+        cards_out.append(_render_card(r, day_dir, len(cards_out) + 1))
 
     reels, alerts = _build_reels(day_dir, recent)
+    reels = [x for x in reels if quality.reel_ok(x)]
 
     # Remember what we just made so it isn't repeated for a long while.
     content.save_recent([c.get("title") for c in cards_out] + [r.get("line") for r in reels])
