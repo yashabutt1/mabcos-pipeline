@@ -84,6 +84,15 @@ def _clean_hook(h: str) -> str:
     return h
 
 
+def _shorten(text: str, limit: int) -> str:
+    """Trim to <= limit chars on a word boundary (no mid-word cuts), add an ellipsis."""
+    text = (text or "").strip()
+    if len(text) <= limit:
+        return text
+    cut = text[:limit].rsplit(" ", 1)[0].rstrip(" ,;:-")
+    return (cut or text[:limit]) + "…"
+
+
 def _caption(hook: str, body: str, hashtags: list[str], cta: str = None) -> str:
     cta = cta or config.CTA_FOLLOW
     tags = " ".join("#" + t.lstrip("#") for t in (hashtags or [])[:3])  # FB ≠ IG: keep it light
@@ -377,12 +386,57 @@ Respond ONLY as JSON:
             "caption": _caption(d.get("fb_hook", d["title"]), d.get("fb_body", ""), d.get("hashtags", []))}
 
 
+def gen_sciencenews(recent=None) -> dict:
+    """Pull a REAL current headline from top sources (Nature, GEN, IEEE Spectrum,
+    ScienceDaily, Harvard Gazette) and rewrite it as a catchy, credible MABCOS post
+    with the real source link."""
+    import random
+    import news_sources
+    recent = recent if recent is not None else load_recent()
+    items = news_sources.fetch_items()
+    if not items:
+        raise RuntimeError("no science-news items available")
+    avoid = {fallbacks._norm(x) for x in (recent or [])}
+    fresh = [it for it in items if fallbacks._norm(it["title"]) not in avoid]
+    it = random.choice(fresh or items)
+    prompt = f"""{VOICE}
+{CAPTION_STYLE}
+Rewrite this REAL science-news item as a MABCOS post. Stay strictly accurate to the
+item — do NOT invent facts, numbers, or claims beyond what's given.
+HEADLINE: {it['title']}
+SUMMARY: {it['summary']}
+SOURCE: {it['source']}
+Respond ONLY as JSON:
+{{"title":"a punchy 4-8 word card headline","kicker":"via {it['source']}",
+  "lede":"1-2 plain-English sentences on what it is, <b>key</b>",
+  "photo_queries":["3-4 attractive stock-photo queries fitting the topic"],
+  "fb_hook":"scroll-stopping first line, no emoji","fb_body":"2-3 short paragraphs on the finding and why it matters; end with a question","hashtags":["2-3"]}}"""
+    try:
+        d = _json(_gen(prompt, grounded=False, temp=0.6))
+    except Exception as exc:
+        print(f"  sciencenews rewrite failed ({exc}); using the headline directly")
+        d = {"title": _shorten(it["title"], 64), "kicker": f"via {it['source']}",
+             "lede": it["summary"][:200],
+             "photo_queries": ["science laboratory research", "dna molecule blue", "microscope close up"],
+             "fb_hook": it["title"], "fb_body": it["summary"][:380],
+             "hashtags": ["biotechnology", "science", "research"]}
+    data = {"layout": "hero", "series": "Science News", "kicker": d.get("kicker"),
+            "title": d["title"], "lede": d.get("lede"),
+            "linkchip": news_sources.domain(it["link"]),
+            "footer_sub": "Follow for the science that matters",
+            "_photo_queries": d.get("photo_queries", ["science laboratory research"])}
+    url = it["link"]
+    body = (d.get("fb_body", "") + f"\n\nSource: {it['source']}\n🔗 {url}").strip()
+    return {"template": "card_photo.html.j2", "data": data, "kind": "sciencenews",
+            "caption": _caption(d.get("fb_hook", it["title"]), body, d.get("hashtags", [])), "url": url}
+
+
 # Registry (per-card generators; used for the one grounded "current" card).
 GENERATORS = {
     "education": gen_education, "business": gen_business, "didyouknow": gen_didyouknow,
     "opportune": gen_opportune, "paper": gen_paper, "tech": gen_tech,
     "event": gen_event, "job": gen_job, "news": gen_news,
-    "tutorial": gen_tutorial, "success": gen_success,
+    "tutorial": gen_tutorial, "success": gen_success, "sciencenews": gen_sciencenews,
 }
 
 # ---------------------------------------------------------------------------
@@ -494,7 +548,10 @@ def current_card(kind: str, recent=None) -> dict:
 # evergreen cards (ONE Gemini call) + 1 current card (ONE grounded call), so all
 # pillars cycle through over successive runs while staying free-tier friendly.
 _EVERGREEN_POOL = ["education", "business", "didyouknow", "interactive"]
-_CURRENT_POOL = ["event", "job", "paper", "tech", "news", "tutorial", "success", "opportune"]
+# "sciencenews" (real headlines from Nature/GEN/IEEE/ScienceDaily/Harvard) is weighted
+# high — it's the most credible, current, source-linked pillar.
+_CURRENT_POOL = ["sciencenews", "sciencenews", "sciencenews", "event", "job", "paper",
+                 "tech", "tutorial", "success", "opportune"]
 
 
 def build_batch(seed: str = "", recent=None) -> list[dict]:

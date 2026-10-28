@@ -272,6 +272,8 @@ BANK = {
     "opportune": _OPPORTUNE, "paper": _PAPER, "tech": _TECH,
     "interactive": _INTERACTIVE, "event": _EVENT, "job": _JOB,
     "news": _NEWS, "tutorial": _TUTORIAL, "success": _SUCCESS,
+    # Last-resort fallback if every live feed is down; real posts carry source links.
+    "sciencenews": _NEWS,
 }
 
 
