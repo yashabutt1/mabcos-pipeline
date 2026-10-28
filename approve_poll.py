@@ -151,16 +151,23 @@ def _cross_post_instagram(res, it):
     except Exception:
         return
     try:
+        if it["type"] == "product":
+            return
+        # Use the MEDIA object id (res["id"]) — the photo/video id — not the feed
+        # story post_id, which carries no images/source field.
+        media_id = (res or {}).get("id")
         if it["type"] == "reel":
-            vurl = post_fb.video_source_url(_post_id(res))
-            igid = instagram.publish_reel(vurl, it.get("caption", "")) if vurl else None
-        elif it["type"] != "product":
-            purl = post_fb.photo_public_url(_post_id(res))
-            igid = instagram.publish_image(purl, it.get("caption", "")) if purl else None
-        else:
-            igid = None
+            url = post_fb.video_source_url(media_id)
+            igid = instagram.publish_reel(url, it.get("caption", "")) if url else None
+        else:  # photo card
+            url = post_fb.photo_public_url(media_id)
+            igid = instagram.publish_image(url, it.get("caption", "")) if url else None
         if igid:
             print(f"cross-posted to Instagram: {igid}")
+        elif not url:
+            print(f"IG cross-post skipped: no public media URL for {it['type']} (id={media_id})")
+        else:
+            print("IG cross-post skipped: Instagram unavailable")
     except Exception as exc:
         print(f"IG cross-post skipped: {exc}")
 
