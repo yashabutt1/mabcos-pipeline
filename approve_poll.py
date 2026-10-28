@@ -303,9 +303,12 @@ def _poll_once(state, long_poll: int = 0) -> int:
             _record_published(res, it)
             items.pop(cb, None)
             posted += 1
+            # Cross-post to Instagram NOW, whether FB posts live or is scheduled —
+            # the uploaded photo/video already has a public URL, so IG shouldn't wait.
+            _cross_post_instagram(res, it)
             if when:
-                _answer(qid, "Scheduled ✅")
-                _edit(chat, mid, f"⏰ Scheduled for peak time — {peak.describe(when)}")
+                _answer(qid, "Scheduled ✅ (also on Instagram)")
+                _edit(chat, mid, f"⏰ FB scheduled for {peak.describe(when)} · Instagram posted now")
             else:
                 _answer(qid, "Posted ✅")
                 _edit(chat, mid, "✅ Posted to the page")
@@ -317,7 +320,6 @@ def _poll_once(state, long_poll: int = 0) -> int:
                     except Exception as exc:
                         print(f"first comment failed: {exc}")
                 _send_share_nudge(pid, it.get("caption", "") or it.get("fb_message", ""))
-                _cross_post_instagram(res, it)
         except Exception as exc:
             # keep the item so a re-tap retries; the consumed update won't come back
             _answer(qid, "Failed — tap Approve again")
