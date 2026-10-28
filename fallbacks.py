@@ -15,9 +15,19 @@ _S = config.CTA_SAVE
 _T = config.CTA_TAG
 
 
+import re as _re
+_EMOJI_TAIL = _re.compile(r'[\U0001F000-\U0001FAFF☀-➿←-⇿️\s]+$')
+
+
+def _clean_hook(h):
+    h = (h or "").strip()
+    h = _re.sub(r'^[^\w"“\'‘(]+', "", h)
+    return _EMOJI_TAIL.sub("", h).strip()
+
+
 def _cap(hook, body, tags, cta=_F):
-    t = " ".join("#" + x for x in tags)
-    return "\n\n".join(p for p in [hook, body, cta, _S, t] if p)
+    t = " ".join("#" + x for x in tags[:3])   # FB ≠ IG: keep hashtags light
+    return "\n\n".join(p for p in [_clean_hook(hook), body, cta, t] if p)
 
 
 _EDUCATION = [

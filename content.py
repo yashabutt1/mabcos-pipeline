@@ -37,6 +37,22 @@ VOICE = (
     f"inspiring. No hype, no fluff."
 )
 
+# How captions must read (this is what makes people stop scrolling and click).
+CAPTION_STYLE = """
+CAPTION STYLE — follow exactly, it drives reach:
+- "fb_hook" is the FIRST LINE people see before Facebook's "See more". Make it a
+  scroll-stopping opener that reads like breaking tech/science news: a surprising
+  claim or a concrete number that promises a payoff. It must make someone think
+  "wait, what?" and tap to read more. NO emoji. NO hashtags. NO "Did you know".
+  Just a confident, specific, plain-English sentence (~8-16 words).
+- "fb_body" delivers on that hook in 2-4 SHORT paragraphs (a blank line between
+  each), written like a mini news story: the what, the how, and the real NUMBERS
+  (percentages, costs, scale). Add a one-line credibility note or "Source:" when
+  relevant. End with ONE short question that invites a comment. At most ONE emoji
+  in the whole body, and never at the start of a line.
+- "hashtags": at most 3, lowercase, relevant. (Facebook is not Instagram.)
+All numbers must be real and verifiable."""
+
 
 def _gen(prompt: str, grounded: bool = False, temp: float = 0.5) -> str:
     if _client is None:
@@ -57,10 +73,21 @@ def _json(text: str) -> dict:
     return json.loads(cleaned[s:e + 1])
 
 
+_EMOJI_TAIL = re.compile(r'[\U0001F000-\U0001FAFF☀-➿←-⇿️\s]+$')
+
+
+def _clean_hook(h: str) -> str:
+    """Make the first line a clean, emoji-free opener (what readers see first)."""
+    h = (h or "").strip()
+    h = re.sub(r'^[^\w"“\'‘(]+', "", h)      # drop leading emoji/bullets
+    h = _EMOJI_TAIL.sub("", h).strip()         # drop trailing emoji (keep . ? !)
+    return h
+
+
 def _caption(hook: str, body: str, hashtags: list[str], cta: str = None) -> str:
     cta = cta or config.CTA_FOLLOW
-    tags = " ".join("#" + t.lstrip("#") for t in (hashtags or [])[:9])
-    parts = [p for p in [hook.strip(), body.strip(), cta, config.CTA_SAVE, tags] if p]
+    tags = " ".join("#" + t.lstrip("#") for t in (hashtags or [])[:3])  # FB ≠ IG: keep it light
+    parts = [p for p in [_clean_hook(hook), (body or "").strip(), cta, tags] if p]
     return "\n\n".join(parts)
 
 
@@ -70,6 +97,7 @@ def _caption(hook: str, body: str, hashtags: list[str], cta: str = None) -> str:
 def gen_education() -> dict:
     prompt = f"""{VOICE}
 {ACCURACY}
+{CAPTION_STYLE}
 
 Create ONE "Bio-Education" card: a specific, true, surprising fact from
 biotechnology, biochemistry, genetics, or microbiology, built around REAL numbers.
@@ -98,6 +126,7 @@ Both stats must be real and verifiable."""
 def gen_business() -> dict:
     prompt = f"""{VOICE}
 {ACCURACY}
+{CAPTION_STYLE}
 
 Create ONE "Bio-Business Idea": a concrete, realistic biotech/bioinformatics
 venture a small team in a developing country could actually start. Be specific and
@@ -123,6 +152,7 @@ Respond ONLY as JSON:
 def gen_didyouknow() -> dict:
     prompt = f"""{VOICE}
 {ACCURACY}
+{CAPTION_STYLE}
 
 Create ONE "Did You Know" card. Either (A) a ranked comparison suited to a bar
 chart (3-6 items with real % values), OR (B) a single astonishing true fact.
@@ -160,6 +190,7 @@ def gen_opportune() -> dict:
     today = date.today().isoformat()
     prompt = f"""{VOICE}
 {ACCURACY}
+{CAPTION_STYLE}
 Today is {today}. Use Google Search to find ONE real, currently-open opportunity
 for biotech/biochem/bioinformatics students or early scientists — a conference,
 scholarship, fellowship, competition, or summer school — whose registration or
@@ -191,6 +222,7 @@ def gen_paper() -> dict:
     from datetime import date
     prompt = f"""{VOICE}
 {ACCURACY}
+{CAPTION_STYLE}
 Today is {date.today().isoformat()}. Use Google Search to find ONE real, recent
 (last ~12 months) notable paper/result in biotech/biochem/bioinformatics. Summarize
 it AND extract the concrete business or career OPPORTUNITY it points to.
@@ -217,6 +249,7 @@ def gen_tech() -> dict:
     from datetime import date
     prompt = f"""{VOICE}
 {ACCURACY}
+{CAPTION_STYLE}
 Today is {date.today().isoformat()}. Use Google Search to find ONE real, recent
 development/trend in biotech or bioinformatics worth explaining simply.
 
@@ -240,6 +273,7 @@ def _event_like(kind, series, search_line, meta_spec, footer, cta=None):
     from datetime import date
     prompt = f"""{VOICE}
 {ACCURACY}
+{CAPTION_STYLE}
 Today is {date.today().isoformat()}. {search_line}
 Respond ONLY as JSON:
 {{"title":"max 7 words","kicker":"short label","lede":"1-2 sentences",
@@ -282,6 +316,7 @@ def _photo_current(kind, series, search_line, extra_fields, footer, link_field, 
     from datetime import date
     prompt = f"""{VOICE}
 {ACCURACY}
+{CAPTION_STYLE}
 Today is {date.today().isoformat()}. {search_line}
 Respond ONLY as JSON:
 {{"title":"max 8 words","kicker":"topic","lede":"1-2 sentences, <b>key</b>",{extra_fields}
@@ -323,6 +358,7 @@ def gen_success() -> dict:
     from datetime import date
     prompt = f"""{VOICE}
 {ACCURACY}
+{CAPTION_STYLE}
 Use Google Search to find ONE real, inspiring success story in biotech/biochem/bioinformatics —
 a scientist, founder or company whose story motivates students. Verify the facts; no invented
 quotes or awards.
@@ -422,7 +458,8 @@ def batch_evergreen(kinds: list[str], recent=None) -> list[dict]:
         return []
     specs = "\n".join(f"{i+1}) {k}: {_BATCH_SPEC[k]}" for i, k in enumerate(kinds))
     prompt = f"""{VOICE}
-{ACCURACY}{_avoid_note(recent)}
+{ACCURACY}
+{CAPTION_STYLE}{_avoid_note(recent)}
 
 Produce content for {len(kinds)} different cards. Respond with ONLY a JSON ARRAY of
 exactly {len(kinds)} objects, IN THIS EXACT ORDER (no markdown, no extra text):
