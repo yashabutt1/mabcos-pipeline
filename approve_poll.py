@@ -157,7 +157,15 @@ def _cross_post_instagram(res, it):
         # story post_id, which carries no images/source field.
         media_id = (res or {}).get("id")
         if it["type"] == "reel":
-            url = post_fb.video_source_url(media_id)
+            # Facebook needs a moment after posting to process the reel and expose its
+            # public source URL — poll until it's ready, then hand it to Instagram.
+            import time
+            url = None
+            for _ in range(15):
+                url = post_fb.video_source_url(media_id)
+                if url:
+                    break
+                time.sleep(5)
             igid = instagram.publish_reel(url, it.get("caption", "")) if url else None
         else:  # photo card
             url = post_fb.photo_public_url(media_id)
