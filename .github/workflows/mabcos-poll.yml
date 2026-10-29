@@ -3,8 +3,9 @@ name: MABCOS approval poll
 # Checks Telegram for your Approve/Reject taps and posts approved items — however
 # long after the batch was sent. Runs every ~15 min (GitHub may delay a little).
 on:
-  schedule:
-    - cron: "*/15 * * * *"
+  # schedule temporarily disabled while verifying reel cross-post — re-enable after.
+  # schedule:
+  #   - cron: "*/15 * * * *"
   workflow_dispatch: {}
 
 # Shared with the generate workflow so pending.json is never written by two runs at once.
