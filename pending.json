@@ -220,6 +220,16 @@
       "type": "reel",
       "caption": "Gene editing, explained simply\n\nCRISPR won the 2020 Nobel and built an industry. Follow for more.\n\n\ud83d\udd16 Save this \u2014 you'll want it before your next exam or interview.\n\n#crispr #geneediting #biotechnology",
       "file_id": "BAACAgEAAxkDAANNaueRTosVcWy-q7zSJ6WISHrtVN4AApALAAJQQzlH7uoqgiEIZ7k9BA"
+    },
+    "2026-11-02-1007/card_1.png": {
+      "type": "card",
+      "caption": "A single PCR machine can amplify a specific DNA segment over a billion times in hours.\n\nPolymerase Chain Reaction (PCR) stands as a cornerstone of molecular biology. Invented in 1983 by Kary Mullis, it enables exponential amplification of DNA sequences. From a few copies, PCR can generate millions to billions of identical copies in just 2-3 hours, making it indispensable for genetic testing, pathogen detection, and forensics. This incredible amplification relies on repeated cycles of heating to separate DNA strands, cooling for primer annealing, and extension by a heat-stable DNA polymerase.\n\nWhile basic PCR provides qualitative detection, its advanced forms have transformed its utility. Quantitative PCR (qPCR), developed in the early 1990s, allows real-time monitoring and precise quantification of DNA/RNA levels, essential for gene expression studies and viral load monitoring. Reverse Transcriptase PCR (RT-PCR), crucial for detecting RNA viruses like SARS-CoV-2, first reverse transcribes RNA into cDNA before amplification. More recently, Digital PCR (dPCR) offers absolute quantification by partitioning the sample into thousands of individual reactions, detecting even single molecules, and is vital for liquid biopsies and rare allele detection. Multiplex PCR simultaneously amplifies multiple targets in a single reaction, saving time and sample.\n\nThe ability to turn trace amounts of genetic material into detectable quantities has driven breakthroughs across science and medicine. For example, a typical 30-cycle PCR reaction amplifies target DNA by over a billion-fold (2^30). This unparalleled sensitivity and specificity continue to evolve, with global PCR market revenue projected to reach $12.3 billion by 2028.\nSource: MarketsandMarkets (2023).\n\nWhich of these PCR advancements do you think has had the most profound impact on global health and research?\n\n\ud83d\udd2c Follow @innovationthroughbiotech for daily biotech, biochem & bioinformatics insight.\n\n#pcr #biotechnology #molecularbiology",
+      "file_id": "AgACAgEAAxkDAANOauhhOt009dtZPXTKtVR7Sej28mQAAosNaxsAAU5BRwAB6KW9oVztbAEAAwIAA3cAAz0E"
+    },
+    "2026-11-02-1007/reels/reel_1.mp4": {
+      "type": "reel",
+      "caption": "AI is designing brand-new proteins\n\nA grand challenge of biology, cracked. Follow for the science behind the headlines.\n\n\ud83d\udd2c Follow @innovationthroughbiotech for daily biotech, biochem & bioinformatics insight.\n\n#ai #proteindesign #bioinformatics",
+      "file_id": "BAACAgEAAxkDAANPauhhPVn15X_1YTNwEzUdKfep7vIAAikIAANOQUeMSmSvX0ahfD0E"
     }
   }
 }
