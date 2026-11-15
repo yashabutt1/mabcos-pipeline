@@ -575,6 +575,16 @@
       "type": "reel",
       "caption": "There's a second genome inside you\n\nMitochondrial DNA is inherited from your mother alone. Follow for more.\n\n\ud83d\udd16 Save this \u2014 you'll want it before your next exam or interview.\n\n#mitochondria #cellbiology #evolution",
       "file_id": "BAACAgEAAxkDAAOYavi5UBn1vPAMcoDPPxpU94jMjlIAAhcKAAJQAclHHROdZCEIcoc9BA"
+    },
+    "2026-11-15-1000/card_1.png": {
+      "type": "card",
+      "caption": "The future of global biotech equity hinges on open-source bioinformatics, not proprietary tools.\n\nProprietary bioinformatics software can cost thousands of dollars annually per license, creating significant barriers for researchers and students, particularly in resource-limited regions. This financial gatekeeping limits access to cutting-edge analysis capabilities, slowing scientific progress and widening the innovation gap.\n\nIn contrast, platforms like Biopython, R Bioconductor, and NCBI BLAST are freely available, empowering millions worldwide. These tools enable critical research in genomics, proteomics, and drug discovery without prohibitive costs, fostering a more inclusive and collaborative scientific ecosystem. This accessibility is vital for training the next generation of biotechnologists globally.\n\nThe open-source model also promotes transparency and community-driven development, allowing for rapid iteration, bug fixes, and feature additions by a diverse pool of contributors. This collective intelligence often outpaces single-company development cycles.\n\nWhere do you stand? Do open-source tools truly level the playing field, or are proprietary solutions still indispensable for advanced research?\n\n\ud83d\udd01 Share this with a classmate or lab mate who should see it.\n\n#opensource #bioinformatics #globalhealth",
+      "file_id": "AgACAgEAAxkDAAOZavmC7C-wREC8pEoB4Nst5029-4YAAgUNaxtQAdFHYP-54X9MUpsBAAMCAAN3AAM9BA"
+    },
+    "2026-11-15-1000/reels/reel_1.mp4": {
+      "type": "reel",
+      "caption": "AlphaFold changed biology overnight\n\nFree protein structures are accelerating drug discovery worldwide. Follow for more.\n\n\ud83d\udd16 Save this \u2014 you'll want it before your next exam or interview.\n\n#alphafold #ai #bioinformatics",
+      "file_id": "BAACAgEAAxkDAAOaavmC7o--VhNKbqUuyzUU2zforUkAAlAHAAJQAdFH74WMTV70hHI9BA"
     }
   }
 }
