@@ -610,6 +610,16 @@
       "type": "reel",
       "caption": "There's a second genome inside you\n\nMitochondrial DNA is inherited from your mother alone. Follow for more.\n\n\ud83d\udd16 Save this \u2014 you'll want it before your next exam or interview.\n\n#mitochondria #cellbiology #evolution",
       "file_id": "BAACAgEAAxkDAAOfavtCheHbOeiX8w1Z3-gUPAOBfHIAAoQLAAKnq9lHU3VLmfrh2LA9BA"
+    },
+    "2026-11-16-2337/card_1.png": {
+      "type": "card",
+      "caption": "Sequencing a human genome costs 100,000 times less than two decades ago.\n\nThe cost of sequencing a human genome plummeted from over $100 million in 2001 to under $1,000 today. This revolution, largely driven by Next-Generation Sequencing (NGS) technologies, has transformed fields from precision medicine to pathogen surveillance.\n\nWhile Sanger sequencing remains the gold standard for validating individual gene edits or sequencing short, specific DNA fragments (often up to ~1000 base pairs), its lower throughput and higher cost per base make it less suitable for large-scale, rapid pathogen identification. NGS platforms can generate billions of base pairs in a single run, offering the speed and depth needed to quickly pinpoint pathogens, track their evolution, and inform public health responses.\n\nThis incredible reduction in cost and increase in speed means researchers and clinicians can now access genomic data faster and more affordably than ever, accelerating discovery and improving diagnostics globally.\n\nWhen faced with a rapidly spreading pathogen, which technology's advantages would you leverage first? \ud83e\udd14\n\n\ud83d\udd2c Follow @innovationthroughbiotech for daily biotech, biochem & bioinformatics insight.\n\n#ngs #sequencing #biotechnology",
+      "file_id": "AgACAgEAAxkDAAOgavuUE32d7R5l1JHFB-AxrUAr2JEAAsMNaxunq9lH6ichor_V1WoBAAMCAAN3AAM9BA"
+    },
+    "2026-11-16-2337/reels/reel_1.mp4": {
+      "type": "reel",
+      "caption": "There's a second genome inside you\n\nMitochondrial DNA is inherited from your mother alone. Follow for more.\n\n\ud83d\udd16 Save this \u2014 you'll want it before your next exam or interview.\n\n#mitochondria #cellbiology #evolution",
+      "file_id": "BAACAgEAAxkDAAOhavuUFz-rTr6oalTmyzFX4rjfIWIAAvoLAAKnq9lHTQd5m_qhgu09BA"
     }
   }
 }
