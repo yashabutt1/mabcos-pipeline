@@ -1,6 +1,5 @@
 {
   "titles": [
-    "Your DNA is <span class='hl'>2 metres</span> long.",
     "What's the primary force driving protein folding?",
     "Specialized Bioinformatics Skill Hub",
     "AI Accelerates Drug Discovery",
@@ -119,6 +118,7 @@
     "Accessibility, not novelty, drives biotech's next revolution.",
     "<span class='hl'>CRISPR</span> = molecular scissors you can program.",
     "Ancient Virus Shaped Human Brains",
-    "One <span class='hl'>E. coli</span> becomes millions overnight."
+    "One <span class='hl'>E. coli</span> becomes millions overnight.",
+    "Much of modern medicine is <span class='hl'>brewed</span>, not synthesized."
   ]
 }
