@@ -1,7 +1,5 @@
 {
   "titles": [
-    "AI Accelerates Drug Discovery",
-    "AI can now <span class='hl'>design proteins</span> that never existed.",
     "Enzymes make reactions up to a <span class='hl'>billion times</span> faster.",
     "The First Battery Was Inspired By a Dead Frog",
     "One <span class='hl'>E. coli</span> becomes millions overnight.",
@@ -119,6 +117,8 @@
     "One <span class='hl'>E. coli</span> becomes millions overnight.",
     "Much of modern medicine is <span class='hl'>brewed</span>, not synthesized.",
     "Bioinformatics should be mandatory in every biology degree",
-    "mRNA doesn't change your DNA."
+    "mRNA doesn't change your DNA.",
+    "For preclinical drug testing, which model offers more physiological relevance?",
+    "<span class='hl'>CRISPR</span> = molecular scissors you can program."
   ]
 }
