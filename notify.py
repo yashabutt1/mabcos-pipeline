@@ -19,6 +19,20 @@ def _env(name: str) -> str:
     return value
 
 
+def _send_full_caption(token: str, chat_id: str, caption: str) -> None:
+    """Send the COMPLETE caption as a plain text message (Telegram allows 4096 chars
+    per message vs 1024 for media captions), so long posts can be reviewed in full.
+    This is the exact text that posts to Facebook — nothing is cut off there."""
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    body = "📝 Full caption (this is what posts to Facebook):\n\n" + caption
+    for i in range(0, len(body), 4000):
+        try:
+            requests.post(url, data={"chat_id": chat_id, "text": body[i:i + 4000],
+                                     "disable_web_page_preview": "true"}, timeout=30)
+        except Exception:
+            pass
+
+
 def send_photo(image_path, caption, callback_data):
     image_path = Path(image_path)
     if not image_path.exists():
@@ -33,9 +47,13 @@ def send_photo(image_path, caption, callback_data):
             {"text": "❌ Reject", "callback_data": f"reject:{callback_data}"},
         ]]
     }
-    # Telegram caps photo captions at 1024 chars; the FULL caption still posts to
-    # Facebook (approve_bot reads it from captions.json, not from this preview).
-    tg_caption = caption if len(caption) <= 1024 else caption[:1015].rstrip() + " […]"
+    # Telegram hard-caps photo captions at 1024 chars; the FULL caption still posts to
+    # Facebook. When it's longer, break the preview at a clean line boundary and send
+    # the COMPLETE caption as a follow-up text message so you can review the whole post.
+    if len(caption) <= 1024:
+        tg_caption = caption
+    else:
+        tg_caption = caption[:1000].rsplit("\n", 1)[0].rstrip() + "\n\n⬇️ full caption below"
     data = {"chat_id": chat_id, "caption": tg_caption, "reply_markup": json.dumps(keyboard)}
     with image_path.open("rb") as fh:
         files = {"photo": (image_path.name, fh, "image/png")}
@@ -43,6 +61,8 @@ def send_photo(image_path, caption, callback_data):
     payload = resp.json()
     if not payload.get("ok"):
         raise RuntimeError(json.dumps(payload, indent=2))
+    if len(caption) > 1024:
+        _send_full_caption(token, chat_id, caption)
     return payload
 
 
@@ -104,7 +124,11 @@ def send_video(video_path, caption, callback_data):
             {"text": "❌ Reject", "callback_data": f"reject:{callback_data}"},
         ]]
     }
-    data = {"chat_id": chat_id, "caption": caption[:1024],
+    if len(caption) <= 1024:
+        tg_caption = caption
+    else:
+        tg_caption = caption[:1000].rsplit("\n", 1)[0].rstrip() + "\n\n⬇️ full caption below"
+    data = {"chat_id": chat_id, "caption": tg_caption,
             "reply_markup": json.dumps(keyboard)}
     with video_path.open("rb") as fh:
         files = {"video": (video_path.name, fh, "video/mp4")}
@@ -112,6 +136,8 @@ def send_video(video_path, caption, callback_data):
     payload = resp.json()
     if not payload.get("ok"):
         raise RuntimeError(json.dumps(payload, indent=2))
+    if len(caption) > 1024:
+        _send_full_caption(token, chat_id, caption)
     return payload
 
 
