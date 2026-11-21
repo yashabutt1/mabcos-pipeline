@@ -45,7 +45,9 @@ jobs:
 
       - name: Process approvals + comment replies (long-poll window)
         env:
-          MABCOS_POLL_SECONDS: "1200"   # ~20 min so taps post within seconds of approving
+          # 3 min: long enough to catch taps, short enough not to hog the shared
+          # concurrency lock and block the generate workflow for 20 minutes.
+          MABCOS_POLL_SECONDS: "180"
         run: python approve_poll.py
 
       - name: Commit queue + comment state
