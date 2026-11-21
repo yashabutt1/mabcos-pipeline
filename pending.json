@@ -710,6 +710,16 @@
       "type": "reel",
       "caption": "AI is designing brand-new proteins\n\nA grand challenge of biology, cracked. Follow for the science behind the headlines.\n\n\ud83d\udd16 Save this \u2014 you'll want it before your next exam or interview.\n\n#ai #proteindesign #bioinformatics",
       "file_id": "BAACAgEAAxkDAAOzawABxKzPMqUDW5HfGRJ2_cSgxpUhAAJpCAACo_EJRPaPgVjGCnidPQQ"
+    },
+    "2026-11-21-1019/card_1.png": {
+      "type": "card",
+      "caption": "Bioinformatics now dictates lab experiments, transforming hypothesis generation itself.\n\nHistorically, bioinformatics primarily analyzed data *after* wet lab experiments were conducted. Today, this role has fundamentally shifted: computational models, AI-driven predictions, and sophisticated statistical analyses are increasingly used to *design* experiments, predict novel biological interactions, and refine hypotheses *before* any physical work begins.\n\nThis proactive approach dramatically accelerates discovery. For instance, in drug development, *in silico* screening can evaluate millions of potential compounds in days or weeks, a process that would demand years and immense resources through traditional wet lab methods. This can reduce experimental screening costs by up to 90% by focusing efforts on the most promising candidates.\n\nThe insights gleaned from large-scale public datasets (like NCBI or UniProt) now directly inform what questions scientists ask and how they structure their research projects. Does bioinformatics *lead* or *follow* your lab's research?\n\n\ud83d\udd01 Share this with a classmate or lab mate who should see it.\n\n#bioinformatics #biotech #researchmethods",
+      "file_id": "AgACAgEAAxkDAAO0awFwfm7o12aGawUt4k7Ujt6zVfYAAvIMaxuj8QlEbtTRINREJ7UBAAMCAAN3AAM9BA"
+    },
+    "2026-11-21-1019/reels/reel_1.mp4": {
+      "type": "reel",
+      "caption": "Clearing up the biggest mRNA myth\n\nA short-lived instruction, not a genome edit. Follow for clear biotech science.\n\n\ud83c\udff7\ufe0f Tag someone who's building a career in the life sciences.\n\n#mrna #biotechnology #vaccines",
+      "file_id": "BAACAgEAAxkDAAO1awFwgdBmMaWVJr5Y8h8O1mnSPIUAAsEJAAKj8QlEY1ln76yeE989BA"
     }
   }
 }
