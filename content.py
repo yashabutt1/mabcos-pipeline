@@ -241,7 +241,7 @@ Respond ONLY as JSON:
             "title": d["title"], "title_size": 58, "lede": d.get("lede"),
             "meta": d.get("meta", []), "linkchip": d.get("link_display"),
             "callout": d.get("tip"), "callout_tone": "gold",
-            "footer_sub": "Save before the deadline 🔖"}
+            "footer_sub": "Deadline inside"}
     url = d.get("url", "")
     cap_body = (d.get("fb_body", "") + (f"\n\n🔗 {url}" if url else "")).strip()
     return {"template": "card.html.j2", "data": data, "kind": "opportune",
@@ -339,7 +339,7 @@ def gen_event(recent=None) -> dict:
         "bioinformatics (e.g. AGBT, ISMB/ECCB, Keystone Symposia, Gordon Research Conferences, "
         "SynBioBeta, Festival of Genomics, ASHG) whose dates are in the future. Verify it is real.",
         '{"icon":"📅","label":"When","value":"<b>dates</b>"},{"icon":"📍","label":"Where","value":"city, country or Virtual"},{"icon":"🎟️","label":"Register","value":"status or deadline"}',
-        "Save this conference 🔖")
+        "Upcoming in biotech")
 
 
 def _pick_event(recent) -> dict | None:
@@ -398,8 +398,8 @@ Respond ONLY as JSON:
     where = f" · {loc}" if ev["location"] else ""
     body = (d.get("fb_body", "") + f"\n\n📅 {ev['date']}{where}\n🔗 {url}").strip()
     return {"template": "card.html.j2", "data": data, "kind": "event",
-            "caption": _caption(d.get("fb_hook", ev["title"]), body, d.get("hashtags", []),
-                                cta="Save this conference 🔖"), "url": url}
+            "caption": _caption(d.get("fb_hook", ev["title"]), body, d.get("hashtags", []))
+            , "url": url}
 
 
 def gen_job() -> dict:
@@ -452,7 +452,7 @@ def gen_tutorial() -> dict:
         "course / learning resource for biotech/biochem/bioinformatics students (e.g. Rosalind, "
         "Galaxy Training, an EMBL-EBI course, a famous MOOC, a great YouTube series). Verify it is free.",
         '"resource_display":"short domain of the resource",',
-        "Save this to learn later 🔖", "resource_display", cta=config.CTA_SAVE)
+        "Free to learn", "resource_display")
 
 
 def gen_success() -> dict:

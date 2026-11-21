@@ -33,10 +33,12 @@ AUDIENCE = (
 # Calls-to-action appended to captions to boost reach (follow/share/save/tag).
 # These signals (shares, saves, comments) are what the algorithm rewards.
 # ---------------------------------------------------------------------------
-CTA_FOLLOW = f"🔬 Follow {HANDLE} for daily biotech, biochem & bioinformatics insight."
-CTA_SHARE = "🔁 Share this with a classmate or lab mate who should see it."
-CTA_SAVE = "🔖 Save this — you'll want it before your next exam or interview."
-CTA_TAG = "🏷️ Tag someone who's building a career in the life sciences."
+# Clean, non-patronizing CTAs — no "save it for your exam/interview" or prescriptive
+# usage instructions; readers know how to use a post.
+CTA_FOLLOW = f"Follow {HANDLE} for more."
+CTA_SHARE = "Share it with someone who'd find it useful."
+CTA_SAVE = ""   # removed — the "save this for your interview" line read as silly
+CTA_TAG = "Tag someone who'd want to see this."
 
 # ---------------------------------------------------------------------------
 # Models  (verify current names at ai.google.dev/gemini-api/docs/models)

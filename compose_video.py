@@ -85,7 +85,10 @@ def make_reel(clip_paths, hook, out_path, music_path=None, seconds=None,
     cmd += [
         "-t", str(seconds),
         "-c:v", "libx264", "-pix_fmt", "yuv420p", "-profile:v", "high",
-        "-preset", "medium", "-crf", "20", "-r", "30",
+        # crf 27 + a ~6 Mbps cap keeps a 15-30s 1080x1920 reel well under Telegram's
+        # 20 MB getFile limit (which was silently blocking every reel from posting),
+        # while still looking sharp on a phone.
+        "-preset", "medium", "-crf", "27", "-maxrate", "6M", "-bufsize", "12M", "-r", "30",
     ]
     if music_path:
         cmd += ["-c:a", "aac", "-b:a", "192k"]

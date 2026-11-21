@@ -68,7 +68,7 @@
 
   <div class="foot">
     <div class="handle">@innovationthroughbiotech<span>{{ footer_sub or 'Biotech · Biochem · Bioinformatics' }}</span></div>
-    <div class="cta">{{ cta or 'Follow + Save →' }}</div>
+    {% if cta %}<div class="cta">{{ cta }}</div>{% endif %}
   </div>
   {% if credit %}<div class="credit">{{ credit }}</div>{% endif %}
 </body></html>
