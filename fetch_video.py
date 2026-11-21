@@ -27,7 +27,9 @@ def _api_key() -> str | None:
 
 
 def _history_path() -> Path:
-    return config.OUTPUT_DIR / _HISTORY_FILE
+    # Project root (committed), NOT output/ — output/ is wiped each cloud run, which
+    # reset the "used clips" memory and caused the same stock videos to repeat.
+    return config.OUTPUT_DIR.parent / _HISTORY_FILE
 
 
 def _load_used_ids() -> list[int]:
