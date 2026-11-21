@@ -27,10 +27,20 @@ FEEDS = [
     ("Harvard Gazette", "https://news.harvard.edu/gazette/feed/", True),
 ]
 
-_KEYWORDS = ("gene", "dna", "rna", "protein", "crispr", "cell", "biotech", "genom",
-             "microb", "enzyme", "molecul", "biolog", "vaccine", "cancer", "bioinformat",
-             "stem", "antibiotic", "mrna", "sequenc", "neuro", "brain", "immun",
-             "bacteri", "virus", "evolution", "drug", "therap", "disease")
+# Specific biotech/biochem/bioinformatics terms (avoid generic words like "cell"
+# that false-match "cell phones"). A general feed must hit one of these to qualify.
+_KEYWORDS = ("gene", "genom", "crispr", "dna", "rna", "biotech", "biochem", "bioinformat",
+             "protein", "enzyme", "molecular biolog", "microbi", "microbiome", "genetic",
+             "vaccine", "mrna", "antibody", "antibiotic", "stem cell", "cell biolog",
+             "immunolog", "immune system", "sequencing", "proteom", "synthetic biol",
+             "pathogen", "bacteria", "virolog", "clinical trial", "drug discovery",
+             "drug development", "therapeutic", "cancer", "tumor", "tumour", "neuroscience",
+             "epigenet", "transcriptom", "metabolom", "biomanufactur", "fermentation")
+
+# Clearly off-topic headlines from general feeds (e.g. Harvard Gazette) to reject.
+_EXCLUDE = ("cell phone", "mobile phone", "smartphone", "social media", "school", "election",
+            "politic", "congress", "climate", "economy", "inflation", "sport", "football",
+            "basketball", "stock market", "housing", "campus", "tuition")
 
 
 def _clean(html: str) -> str:
@@ -39,6 +49,8 @@ def _clean(html: str) -> str:
 
 def _relevant(title: str, summary: str) -> bool:
     text = (title + " " + summary).lower()
+    if any(x in text for x in _EXCLUDE):
+        return False
     return any(k in text for k in _KEYWORDS)
 
 
