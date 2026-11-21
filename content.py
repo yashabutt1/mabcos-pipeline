@@ -33,8 +33,15 @@ ACCURACY = (
 )
 VOICE = (
     f"Write for MABCOS (@innovationthroughbiotech), a biotech/biochem/bioinformatics "
-    f"page. Audience: {config.AUDIENCE} Voice: credible, specific, useful, a little "
-    f"inspiring. No hype, no fluff."
+    f"page. Audience: {config.AUDIENCE}\n"
+    "QUALITY BAR — this is the whole point: every post must TEACH something advanced and "
+    "genuinely useful — a real mechanism, a non-obvious insight, a concrete technique or tool, "
+    "a skill or career edge, or a current development the reader can act on. Write for a smart, "
+    "serious reader and go one level DEEPER than the obvious. BANNED: trivia everyone already "
+    "knows ('DNA is ~2 metres long', 'cells are tiny'), vague filler ('a marvel of biology', "
+    "'the wonders of science'), and 'follow for more' as the payoff. The payoff must be inside "
+    "the post itself. Be specific and substantive — the kind of post a PhD student, researcher or "
+    "biotech professional would actually screenshot, save, or send to a colleague. No hype, no fluff."
 )
 
 # How captions must read (this is what makes people stop scrolling and click).
@@ -45,10 +52,13 @@ CAPTION STYLE — follow exactly, it drives reach:
   claim or a concrete number that promises a payoff. It must make someone think
   "wait, what?" and tap to read more. NO emoji. NO hashtags. NO "Did you know".
   Just a confident, specific, plain-English sentence (~8-16 words).
-- "fb_body" delivers on that hook in 2-4 SHORT paragraphs (a blank line between
-  each), written like a mini news story: the what, the how, and the real NUMBERS
-  (percentages, costs, scale). Add a one-line credibility note or "Source:" when
-  relevant. End with ONE short, EASY-to-answer question — a this-or-that, a yes/no,
+- "fb_body" delivers REAL SUBSTANCE in 3-4 tight paragraphs (blank line between each).
+  Don't just restate the hook — explain the MECHANISM or the "how it actually works",
+  give the real NUMBERS (percentages, costs, scale, timelines), and land a non-obvious
+  INSIGHT or a practical takeaway the reader can use (a technique, a tool, a why-it-matters
+  for their work or career). Assume a smart reader who knows the basics — teach them the
+  layer underneath. No filler sentences, no "marvel of biology", no "follow for more".
+  Add a one-line credibility note or "Source:" when relevant. End with ONE short, EASY question — a this-or-that, a yes/no,
   "which would you pick?", or "guess before you read" — the kind of question someone
   replies to in 3 seconds. Easy questions get fast comments, and early comments are
   what trigger Facebook to show the post to more people. At most ONE emoji in the whole
@@ -117,10 +127,12 @@ def gen_education() -> dict:
 {ACCURACY}
 {CAPTION_STYLE}
 
-Create ONE "Bio-Education" card: a specific, true, surprising fact from
-biotechnology, biochemistry, genetics, or microbiology, built around REAL numbers.
-Pick something concrete (an impact figure, a cost, a percentage, a record) — like
-the kind of fact a curious student screenshots.
+Create ONE "Bio-Education" card that teaches an ADVANCED, genuinely useful concept in
+biotechnology, biochemistry, genetics, bioinformatics, or microbiology — the layer
+UNDERNEATH the textbook basics. Pick something a serious student or early scientist
+would find genuinely insightful: how a real technique works, why a counter-intuitive
+result happens, a concept people commonly get wrong, or a practical tool/skill. Build
+it around REAL numbers. NOT surface trivia (not "DNA is 2m long", not "cells are small").
 
 Respond ONLY as JSON:
 {{"kicker":"2-3 word topic in Title Case",
@@ -129,8 +141,9 @@ Respond ONLY as JSON:
   "stats":[{{"n":"big number e.g. 9% or $57B","l":"what it measures, <=9 words"}},
            {{"n":"second number","l":"what it measures, <=9 words"}}],
   "callout":"one 'why it matters' sentence, <b>...</b> on the key idea",
-  "fb_hook":"1 line caption hook","fb_body":"1-2 sentence caption body + a question",
-  "hashtags":["6-9 relevant tags"]}}
+  "fb_hook":"1 line caption hook (per CAPTION STYLE)",
+  "fb_body":"the full substantive caption body per CAPTION STYLE — mechanism + numbers + a useful takeaway, ending with one easy question",
+  "hashtags":["3 relevant tags"]}}
 Both stats must be real and verifiable."""
     d = _json(_gen(prompt, temp=0.7))
     data = {"series": "Bio · Education", "kicker": d.get("kicker"),
@@ -692,6 +705,34 @@ def pick_reel_hooks(n: int, recent=None) -> list[dict]:
     pool = fresh if len(fresh) >= n else REEL_HOOKS[:]
     _random.shuffle(pool)
     return pool[:n]
+
+
+def reel_caption(hook: dict) -> str:
+    """Write a SUBSTANTIVE caption for a reel (advanced, useful — per the quality bar),
+    via Gemini. The on-screen line stays punchy; the caption teaches the real depth.
+    Falls back to the hook's built-in caption if Gemini is unavailable."""
+    line = _clean_hook(re.sub(r"<[^>]+>", "", hook.get("hook", "")))
+    sub = re.sub(r"<[^>]+>", "", hook.get("sub", "") or "")
+    prompt = f"""{VOICE}
+{ACCURACY}
+{CAPTION_STYLE}
+This is the caption for a short REEL. Its on-screen line is: "{line}" — {sub}
+Write the caption that teaches this PROPERLY and usefully: the mechanism or how it really
+works, the real numbers, and a non-obvious insight or practical takeaway a serious student
+or scientist would value. Do NOT just restate the on-screen line, and no "follow for more".
+Respond ONLY as JSON: {{"fb_hook":"scroll-stopping first line, no emoji",
+  "fb_body":"3-4 substantive paragraphs per CAPTION STYLE, ending with one easy question",
+  "hashtags":["3 relevant tags"]}}"""
+    try:
+        d = _json(_gen(prompt, grounded=False, temp=0.6))
+        body = d.get("fb_body", "").strip()
+        if len(body) < 120:            # too thin — keep the built-in instead
+            return hook["caption"]
+        return _caption(d.get("fb_hook", line), body, d.get("hashtags", []),
+                        cta=_random.choice(_ACTION_CTAS))
+    except Exception as exc:
+        print(f"  reel caption gen failed ({exc}); using built-in caption")
+        return hook["caption"]
 
 
 # ---------------------------------------------------------------------------

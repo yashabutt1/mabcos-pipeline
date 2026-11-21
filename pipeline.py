@@ -163,7 +163,7 @@ def _build_reels(day_dir: Path, recent=None):
         except Exception as exc:
             print(f"  reel compose failed ({exc}); skipping")
             continue
-        cap = hook["caption"]
+        cap = content.reel_caption(hook)   # substantive, advanced caption (Gemini)
         if music:
             try:
                 cap += "\n\n" + fetch_music.credit_line(os.path.basename(music))
