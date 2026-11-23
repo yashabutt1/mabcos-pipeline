@@ -1,7 +1,5 @@
 {
   "titles": [
-    "Your DNA is <span class='hl'>2 metres</span> long.",
-    "Europe's Biotech Future Unveiled",
     "AI predicted <span class='hl'>200 million</span> protein structures.",
     "How much DNA do you share?",
     "Enzymes make reactions up to a <span class='hl'>billion times</span> faster.",
@@ -119,6 +117,8 @@
     "Antibiotic resistance kills over a <span class='hl'>million</span> people a year.",
     "Acorns Predict Lyme Risk",
     "You carry more <span class='hl'>microbial cells</span> than human ones.",
-    "Scientists can now <span class='hl'>program cells</span> like computers."
+    "Scientists can now <span class='hl'>program cells</span> like computers.",
+    "Wet lab scientists *must* code.",
+    "Every thought you have runs on <span class='hl'>molecular signals</span>."
   ]
 }
