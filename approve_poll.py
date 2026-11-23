@@ -228,6 +228,9 @@ def _edit(chat, mid, text):
 def _download(file_id: str, suffix: str) -> str:
     gf = requests.get(f"https://api.telegram.org/bot{_token()}/getFile",
                       params={"file_id": file_id}, timeout=30).json()
+    if not gf.get("ok") or "result" not in gf:
+        # e.g. "file is too big" (>20MB getFile limit) or an expired file_id
+        raise RuntimeError(f"Telegram getFile failed: {gf.get('description', gf)}")
     path = gf["result"]["file_path"]
     url = f"https://api.telegram.org/file/bot{_token()}/{path}"
     data = requests.get(url, timeout=180).content
