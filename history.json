@@ -1,6 +1,5 @@
 {
   "titles": [
-    "How much DNA do you share?",
     "Enzymes make reactions up to a <span class='hl'>billion times</span> faster.",
     "The DNA in one cell is 2 metres long",
     "<span class='hl'>CRISPR</span> = molecular scissors you can program.",
@@ -119,6 +118,7 @@
     "Scientists can now <span class='hl'>program cells</span> like computers.",
     "Wet lab scientists *must* code.",
     "Every thought you have runs on <span class='hl'>molecular signals</span>.",
-    "A virus is just <span class='hl'>genes in a shell</span>."
+    "A virus is just <span class='hl'>genes in a shell</span>.",
+    "<span class='hl'>PCR</span> copies one DNA strand into billions."
   ]
 }
