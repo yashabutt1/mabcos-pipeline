@@ -201,6 +201,25 @@ def _save(state: dict) -> None:
     PENDING.write_text(json.dumps(state, indent=2), encoding="utf-8")
 
 
+def _refresh_items(state: dict) -> None:
+    """Pull the latest queued items from the repo so a long-running poll also sees
+    cards the generate workflow queued AFTER this job checked out. The poll is
+    otherwise stateless about pending.json: it never writes it, so it can never race
+    the generate workflow. Telegram itself is the source of truth for 'already
+    handled' (a tap is delivered once, then confirmed server-side)."""
+    url = os.getenv("PENDING_URL", "").strip()
+    if not url:
+        return
+    try:
+        r = requests.get(url, timeout=20, headers={"Cache-Control": "no-cache"})
+        if r.ok:
+            remote = r.json().get("items")
+            if isinstance(remote, dict) and remote:
+                state["items"] = remote
+    except Exception as exc:
+        print(f"  (item refresh skipped: {exc})", flush=True)
+
+
 def _get_updates(offset: int, long_poll: int = 0):
     r = requests.get(f"https://api.telegram.org/bot{_token()}/getUpdates",
                      params={"offset": offset, "timeout": long_poll,
@@ -339,28 +358,59 @@ def _poll_once(state, long_poll: int = 0) -> int:
             _answer(qid, "Failed — tap Approve again")
             print(f"post failed for {cb}: {exc}")
 
+    # NOTE: pending.json is deliberately NOT written here. The poll is stateless
+    # about the queue — it relies on Telegram confirming handled taps (see main),
+    # so it can never race the generate workflow's pending.json commit. published.json
+    # and comments.json ARE written above (by _record_published / the reply handler),
+    # since the poll owns those files.
     state["offset"] = offset
-    _save(state)
     return posted
+
+
+def _scan_comments() -> None:
+    """Scan published posts for new comments and alert on Telegram. Run in-process
+    during the long poll so reply alerts stay responsive (the first 10–20 min after
+    a comment is when a reply lifts reach)."""
+    try:
+        import comment_watch
+        comment_watch.scan()
+    except Exception as exc:
+        print(f"  comment scan error (continuing): {exc}", flush=True)
 
 
 def main():
     import time
     budget = int(os.getenv("MABCOS_POLL_SECONDS", "0") or 0)
     deadline = time.time() + budget
+    scan_every = int(os.getenv("MABCOS_SCAN_SECONDS", "600") or 600)
+    # One in-memory state for the whole run. Start the offset at 0: Telegram only
+    # returns updates it hasn't confirmed yet, and each long-poll iteration confirms
+    # the previous batch, so handled taps never come back even though the poll never
+    # persists pending.json. This makes posting immune to the pending.json write race
+    # that was swallowing approvals. published.json / comments.json are still written
+    # (and committed by the workflow at the end of the run) so comment-watch survives.
+    state = _load()
+    state["offset"] = 0
     total = 0
+    loops = 0
+    last_scan = 0.0
     while True:
-        # Long-poll (25s) when running a window so taps post within seconds; a
-        # single quick check otherwise.
-        total += _poll_once(_load_into(), long_poll=25 if budget else 0)
+        loops += 1
+        if time.time() - last_scan >= scan_every:
+            _scan_comments()
+            last_scan = time.time()
+        try:
+            _refresh_items(state)
+            # Long-poll (25s) when running a window so taps post within seconds; a
+            # single quick check otherwise.
+            total += _poll_once(state, long_poll=25 if budget else 0)
+        except Exception as exc:
+            # A transient Telegram/network hiccup must never kill a long poll run.
+            print(f"  poll iteration error (continuing): {exc}", flush=True)
+            time.sleep(5)
         if budget <= 0 or time.time() >= deadline:
             break
-    print(f"posted {total}; offset persisted")
-
-
-# Reload state each iteration so a concurrent generate commit is respected.
-def _load_into():
-    return _load()
+    print(f"posted {total}; polled {loops}x over ~{budget}s")
 
 
 if __name__ == "__main__":
